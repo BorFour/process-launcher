@@ -2,27 +2,15 @@
 
 import sys
 import json
-import pprint
 
+# import PyQt5
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QGridLayout, QWidget, QAction,
                              QFileDialog, QMessageBox)
-from PyQt5.QtGui import QIcon
-import PyQt5
 
-from process_group import ProcessGroup
-
-N_GROUPS = 2
-N_PROCESSES = 4
-
-
-def clearLayout(layout):
-    while layout.count():
-        child = layout.takeAt(0)
-        if child.widget() is not None:
-            child.widget().deleteLater()
-        elif child.layout() is not None:
-            clearLayout(child.layout())
+import utils
+from process_group_widget import ProcessGroup, empty_group_data
 
 
 class AppWidget(QWidget):
@@ -30,13 +18,16 @@ class AppWidget(QWidget):
 
     def __init__(self, window=None):
         super(AppWidget, self).__init__(window)
+        # TODO read this from settings
         self.n_columns = 3
 
         self.init_size()
         self.init_layout()
+        self.clear_groups()
 
     def clear_groups(self):
-        clearLayout(self.widget_layout)
+        """Removes all the widgets in this widget's layout."""
+        utils.clearLayout(self.widget_layout)
         self.group_widgets = []
 
     def init_size(self):
@@ -46,23 +37,43 @@ class AppWidget(QWidget):
         self.widget_layout = QGridLayout()
         self.setLayout(self.widget_layout)
 
+    def adjust_groups_to_layout(self):
+        # utils.clearLayout(self.widget_layout)
+        for i, process_group in enumerate(self.group_widgets):
+            self.widget_layout.addWidget(
+            process_group, i / self.n_columns,
+            i % self.n_columns)
+
     def create_groups_from_dict(self, data: dict):
         self.clear_groups()
         for i, group_data in enumerate(data["groups"]):
-            process_group = ProcessGroup(self, name=group_data["name"])
-            process_group.container.restore_processes(group_data["processes"])
-            self.group_widgets.append(process_group)
-            self.widget_layout.addWidget(
-                process_group, i / self.n_columns,
-                i % self.n_columns)
+            self.create_group_from_dict(group_data, i)
+
+    def create_group_from_dict(self, data: dict, index: int):
+        process_group = ProcessGroup(self, name=data["name"])
+        process_group.container.restore_processes(data["processes"])
+        self.group_widgets.append(process_group)
+        self.widget_layout.addWidget(
+            process_group, index / self.n_columns,
+            index % self.n_columns)
+
+        return process_group
+
+    def add_empty_group_right(self):
+        """Adds an empty group to the right of the rightmost existing group."""
+        return self.create_group_from_dict(empty_group_data, len(self.group_widgets))
+
+    def delete_group(self, group):
+        """Deletes a group from the app widget."""
+        self.group_widgets.remove(group)
+        group.deleteLater()
+        self.adjust_groups_to_layout()
 
     def toJSON(self) -> dict:
         ret = {}
         ret["groups"] = []
         for group in self.group_widgets:
             ret["groups"].append(group.toJSON())
-        pprint.pprint(ret)
-
         return ret
 
     def end_all(self):
@@ -74,22 +85,29 @@ class AppWidget(QWidget):
 class AppWindow(QMainWindow):
     """docstring for AppWindow"""
 
+    NO_SAVE_FILE = "No file selected"
+
     def __init__(self, profile_filename=None):
         super(AppWindow, self).__init__()
         self.centralWidget = AppWidget(self)
         self.setCentralWidget(self.centralWidget)
-        # self.addWidget(self.widget)
+
         self.init_menubar()
-        self.selected_profile_path = profile_filename
+        self.select_profile_file(profile_filename)
         if self.selected_profile_path:
             self.load_profile(self.selected_profile_path)
 
+        # TODO read this from settings
+        # self.setWindowFlags(PyQt5.QtCore.Qt.WindowStaysOnTopHint)
 
-        self.setWindowTitle(self.selected_profile_path)
-        self.setWindowFlags(PyQt5.QtCore.Qt.WindowStaysOnTopHint)
+    def select_profile_file(self, filename: str):
+        """Changes the current reference to a profile JSON file."""
+        self.selected_profile_path = filename
+        self.setWindowTitle(self.selected_profile_path or self.NO_SAVE_FILE)
 
     def init_menubar(self):
         self.fileMenu = self.menuBar().addMenu("File")
+        self.groupMenu = self.menuBar().addMenu("Group")
         self.viewMenu = self.menuBar().addMenu("View")
 
         importProcesses = QAction(
@@ -112,22 +130,33 @@ class AppWindow(QMainWindow):
         saveAsProfile.triggered.connect(self.profile_save_as)
 
         self.fileMenu.addAction(importProcesses)
-        # self.fileMenu.addAction(saveProfile)
         self.fileMenu.addAction(saveAsProfile)
         self.fileMenu.addAction(clearGroups)
+
+        self.newGroup = self.groupMenu.addMenu("New")
+        newEmtpyGroup = QAction(
+            QIcon('img/arrow_restart.png'), 'Empty group', self)
+        newEmtpyGroup.setStatusTip(
+            'Create a new empty group to the right of the existing ones')
+        newEmtpyGroup.triggered.connect(
+            self.centralWidget.add_empty_group_right)
+
+        self.newGroup.addAction(newEmtpyGroup)
 
     def load_profile(self, filename: str):
         print("Loading {}".format(filename))
         with open(filename, 'r') as json_data:
             d = json.load(json_data)
             self.centralWidget.create_groups_from_dict(d)
+        self.select_profile_file(filename)
 
     def browse_profile_json(self):
         print("browsing")
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Browsing the filesystem for a profile", "", "JSON Files (*.json);;All Files (*)", options=options)
+            self, "Browsing the filesystem for a profile", "",
+            "JSON Files (*.json);;All Files (*)", options=options)
         if filename:
             self.selected_profile_path = filename
             self.load_profile(self.selected_profile_path)
@@ -142,13 +171,15 @@ class AppWindow(QMainWindow):
         with open(filename, "w") as text_file:
             text_file.write(string_json)
 
+        self.select_profile_file(filename)
         print("Profile succesfully saved to {}".format(filename))
 
     def select_output_filename(self) -> str or None:
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         file_name, _ = QFileDialog.getSaveFileName(
-            self, "Saving profile to a file", "", "JSON Files (*.json)", options=options)
+            self, "Saving profile to a file", "",
+            "JSON Files (*.json)", options=options)
         if file_name:
             print(file_name)
             return file_name
@@ -158,7 +189,8 @@ class AppWindow(QMainWindow):
     def closeEvent(self, event):
         close = QMessageBox()
         close.setText("Do you want to close running processes?")
-        close.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+        close.setStandardButtons(
+            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
         close = close.exec()
 
         if close == QMessageBox.Yes:
@@ -168,6 +200,7 @@ class AppWindow(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
 
 def main():
     app = QApplication(sys.argv)

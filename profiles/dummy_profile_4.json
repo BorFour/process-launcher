@@ -1,0 +1,23 @@
+{
+  "groups": [
+    {
+      "name": "Random group name from JSON",
+      "processes": [
+        {
+          "dir": "~/",
+          "args": [
+            "tree",
+            "~/Pictures/"
+          ]
+        },
+        {
+          "dir": "~/Pictures/",
+          "args": [
+            "ls",
+            "."
+          ]
+        }
+      ]
+    }
+  ]
+}

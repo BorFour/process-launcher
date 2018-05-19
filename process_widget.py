@@ -1,12 +1,12 @@
 
 import subprocess
 
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QLabel, QHBoxLayout, QVBoxLayout,
     QTableWidget, QTableWidgetItem)
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QSize
 
 DEFAULT_DIRECTORY = "~/Playground/python/pyqt5/first_example"
 SLEEP_AFTER_COMMAND = 20

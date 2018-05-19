@@ -1,17 +1,22 @@
 
-
+import PyQt5.QtCore
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel,
                              QHBoxLayout, QVBoxLayout, QPushButton)
 
 from process_widget import ProcessWidget
-import PyQt5.QtCore
 
-
+empty_group_data = {
+    "name" : "",
+    "processes": []
+}
 class ProcessGroup(QWidget):
     """docstring for ProcessGroup"""
 
     def __init__(self, window=None, name=None):
         super(ProcessGroup, self).__init__(window)
+        self.parent_widget = window
         self.container = _ProcessContainer(self)
         self.header = _ProcessGroupHeader(self, name)
         # self.header = QLabel(name or 'This is the header of the process group')
@@ -52,29 +57,40 @@ class ProcessGroup(QWidget):
 
         return ret
 
+    def delete(self):
+        """Delete this group."""
+        self.parent_widget.delete_group(self)
 
 class _ProcessGroupHeader(QWidget):
 
     def __init__(self, window, name=None):
         super(_ProcessGroupHeader, self).__init__(window)
         self.name = name
-        self.parent = window
+        self.parent_widget = window
         self.title = QLabel(self.name or 'Group of processes')
         self.title.setAlignment(PyQt5.QtCore.Qt.AlignHCenter)
 
+        self.delete_button = QPushButton(self)
+        self.delete_button.setIcon(QIcon('./img/trash.png'))
+        self.delete_button.setIconSize(QSize(24, 24))
+        self.delete_button.clicked.connect(self.parent_widget.delete)
+
         self.launch_button = QPushButton(self)
         self.launch_button.setText("Launch all")
-        self.launch_button.clicked.connect(self.parent.container.run_all)
+        self.launch_button.clicked.connect(self.parent_widget.container.run_all)
 
         self.stop_button = QPushButton(self)
         self.stop_button.setText("Stop this group's processes")
-        self.stop_button.clicked.connect(self.parent.container.kill_them_all)
+        self.stop_button.clicked.connect(self.parent_widget.container.kill_them_all)
 
         self.init_layout()
 
     def init_layout(self):
         self.widget_layout = QVBoxLayout()
-        self.widget_layout.addWidget(self.title)
+        title_and_delete_layout = QHBoxLayout()
+        title_and_delete_layout.addWidget(self.title)
+        title_and_delete_layout.addWidget(self.delete_button)
+        self.widget_layout.addLayout(title_and_delete_layout)
         self.widget_layout.addWidget(self.launch_button)
         self.widget_layout.addWidget(self.stop_button)
         self.setLayout(self.widget_layout)
@@ -84,7 +100,7 @@ class _ProcessContainer(QWidget):
 
     def __init__(self, parent):
         super(_ProcessContainer, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.init_layout()
         self.elements = set()
 
@@ -93,8 +109,8 @@ class _ProcessContainer(QWidget):
         self.setLayout(self.widget_layout)
 
     def add_element(self, element):
-        self.widget_layout.addWidget(element, len(self.elements) / self.parent.n_columns,
-                                     len(self.elements) % self.parent.n_columns)
+        self.widget_layout.addWidget(element, len(self.elements) / self.parent_widget.n_columns,
+                                     len(self.elements) % self.parent_widget.n_columns)
         self.elements.add(element)
 
     def run_all(self):
