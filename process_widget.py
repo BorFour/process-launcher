@@ -5,12 +5,17 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QLabel, QHBoxLayout, QVBoxLayout,
-    QTableWidget, QTableWidgetItem)
+    QTableWidget, QTableWidgetItem, QLineEdit)
 
 
-DEFAULT_DIRECTORY = "~/Playground/python/pyqt5/first_example"
-SLEEP_AFTER_COMMAND = 20
+DEFAULT_DIRECTORY = "~/"
 
+empty_process_data = {
+    "name": "empty process",
+    "dir" : DEFAULT_DIRECTORY,
+    "args": [],
+    "description": "This is an empty process template"
+}
 
 class Process(object):
     """docstring for Process"""
@@ -23,14 +28,14 @@ class Process(object):
         self.popen = None
 
     @property
-    def args(self):
+    def args(self) -> list:
         return [
             self.table_widget.item(i, 0).text()
             for i in range(self.table_widget.rowCount())
             if self.table_widget.item(i, 0)
         ]
 
-    def create_command(self):
+    def create_command(self) -> str:
         command = "{}".format(self.args[0])
         for argument in self.args[1:]:
             command += " {}".format(argument)
@@ -63,16 +68,23 @@ class ProcessWidget(QWidget):
     """docstring for ProcessWidget"""
     n_processes = 0
 
-    def __init__(self, window, *args, directory=None):
+    @classmethod
+    def create_empty_process(cls, window):
+        d = empty_process_data
+        return cls(window, *d["args"], directory=d["dir"], name=d["name"])
+
+    def __init__(self, window, *args, directory=None, name=None):
         super(ProcessWidget, self).__init__(window)
         self.args = list(*args)
-
+        self.parent_widget = window
         self._init_args_table(self.args)
         self.process = Process(self.args_table_widget,
-                               name="process {}".format(
+                               name=name or "process {}".format(
                                    ProcessWidget.n_processes), directory=directory or DEFAULT_DIRECTORY)
 
-        self.directory_text = QLabel(self.process.directory)
+        # self.directory_text = QLabel(self.process.directory)
+        self.directory_text = QLineEdit(self.process.directory)
+        self.directory_text.setPlaceholderText("Current workdir")
         self.button = QPushButton(self)
         self.button.setText("Edit {}".format(
             self.process.name))
@@ -82,8 +94,13 @@ class ProcessWidget(QWidget):
         self.restart_button.setIconSize(QSize(24, 24))
         self.restart_button.clicked.connect(self.process.restart)
 
+        self.close_button = QPushButton(self)
+        self.close_button.setIcon(QIcon('./img/close.png'))
+        self.close_button.setIconSize(QSize(24, 24))
+        self.close_button.clicked.connect(self.close)
+
         ProcessWidget.n_processes += 1
-        self.init_layout()
+        self._init_layout()
 
     def _init_args_table(self, *args):
         # TODO: add something to add more arguments
@@ -94,9 +111,10 @@ class ProcessWidget(QWidget):
             self.args_table_widget.insertRow(i)
             self.args_table_widget.setItem(0, i, QTableWidgetItem(arg))
 
-    def init_layout(self):
+    def _init_layout(self):
         self.hbox1 = QHBoxLayout()
         self.hbox1.addWidget(self.directory_text)
+        self.hbox1.addWidget(self.close_button)
 
         self.hbox2 = QHBoxLayout()
         self.hbox2.addWidget(self.args_table_widget)
@@ -111,7 +129,10 @@ class ProcessWidget(QWidget):
         self.vbox.addLayout(self.hbox3)
         self.setLayout(self.vbox)
 
-    def toJSON(self):
+    def close(self):
+        self.parent_widget.remove_element(self)
+
+    def toJSON(self) -> dict:
         ret = {}
         ret["dir"] = self.process.directory
         ret["args"] = []

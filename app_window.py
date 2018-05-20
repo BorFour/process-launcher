@@ -2,7 +2,7 @@
 
 import sys
 import json
-
+import logging
 # import PyQt5
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow,
 import utils
 from process_group_widget import ProcessGroup, empty_group_data
 
+logger = logging.getLogger('process_launcher')
 
 class AppWidget(QWidget):
     """docstring for AppWidget"""
@@ -22,7 +23,7 @@ class AppWidget(QWidget):
         self.n_columns = 3
 
         self.init_size()
-        self.init_layout()
+        self._init_layout()
         self.clear_groups()
 
     def clear_groups(self):
@@ -33,7 +34,7 @@ class AppWidget(QWidget):
     def init_size(self):
         self.setGeometry(300, 300, 900, 900)
 
-    def init_layout(self):
+    def _init_layout(self):
         self.widget_layout = QGridLayout()
         self.setLayout(self.widget_layout)
 
@@ -116,10 +117,7 @@ class AppWindow(QMainWindow):
         importProcesses.setStatusTip('Import processes from a JSON file')
         importProcesses.triggered.connect(self.browse_profile_json)
 
-        clearGroups = QAction(
-            QIcon('img/arrow_restart.png'), 'Clear groups', self)
-        # clearGroups.setShortcut('Ctrl+')
-
+        clearGroups = QAction('Clear groups', self)
         clearGroups.triggered.connect(self.centralWidget.clear_groups)
 
         # saveProfile = QAction(QIcon('img/save.png'), 'Save', self)
@@ -131,27 +129,27 @@ class AppWindow(QMainWindow):
 
         self.fileMenu.addAction(importProcesses)
         self.fileMenu.addAction(saveAsProfile)
-        self.fileMenu.addAction(clearGroups)
 
         self.newGroup = self.groupMenu.addMenu("New")
-        newEmtpyGroup = QAction(
-            QIcon('img/arrow_restart.png'), 'Empty group', self)
+        self.groupMenu.addAction(clearGroups)
+        newEmtpyGroup = QAction('Empty group', self)
         newEmtpyGroup.setStatusTip(
             'Create a new empty group to the right of the existing ones')
+        newEmtpyGroup.setShortcut('Ctrl+N')
         newEmtpyGroup.triggered.connect(
             self.centralWidget.add_empty_group_right)
 
         self.newGroup.addAction(newEmtpyGroup)
 
     def load_profile(self, filename: str):
-        print("Loading {}".format(filename))
+        logger.info("Loading {}".format(filename))
         with open(filename, 'r') as json_data:
             d = json.load(json_data)
             self.centralWidget.create_groups_from_dict(d)
         self.select_profile_file(filename)
 
     def browse_profile_json(self):
-        print("browsing")
+        logger.info("Browsing files")
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         filename, _ = QFileDialog.getOpenFileName(

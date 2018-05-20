@@ -8,9 +8,11 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel,
 from process_widget import ProcessWidget
 
 empty_group_data = {
-    "name" : "",
+    "name": "",
     "processes": []
 }
+
+
 class ProcessGroup(QWidget):
     """docstring for ProcessGroup"""
 
@@ -21,19 +23,22 @@ class ProcessGroup(QWidget):
         self.header = _ProcessGroupHeader(self, name)
         # self.header = QLabel(name or 'This is the header of the process group')
         # self.container = ProcessWidget(self)
-        self.init_style()
-        self.init_layout()
+        self._init_style()
+        self._init_layout()
         self.n_columns = 2
 
     def add_element(self, element):
         # return
         return self.container.add_element(element)
 
-    def init_style(self):
+    def remove_element(self, element):
+        return self.container.remove_element(element)
+
+    def _init_style(self):
         pass
         # self.setStyleSheet("margin:5px; border:1px solid rgb(0, 255, 0); ")
 
-    def init_layout(self):
+    def _init_layout(self):
         self.hbox1 = QHBoxLayout()
         # self.hbox1.setSpacing(1)
         self.hbox1.addWidget(self.header)
@@ -48,7 +53,7 @@ class ProcessGroup(QWidget):
         self.vbox.addLayout(self.hbox2)
         self.setLayout(self.vbox)
 
-    def toJSON(self):
+    def toJSON(self) -> dict:
         ret = {}
         ret["name"] = self.header.name
         ret["processes"] = []
@@ -57,9 +62,14 @@ class ProcessGroup(QWidget):
 
         return ret
 
+    def add_empty_process(self):
+        process_widget = ProcessWidget.create_empty_process(self)
+        self.add_element(process_widget)
+
     def delete(self):
         """Delete this group."""
         self.parent_widget.delete_group(self)
+
 
 class _ProcessGroupHeader(QWidget):
 
@@ -75,21 +85,29 @@ class _ProcessGroupHeader(QWidget):
         self.delete_button.setIconSize(QSize(24, 24))
         self.delete_button.clicked.connect(self.parent_widget.delete)
 
+        self.add_process_button = QPushButton(self)
+        self.add_process_button.setIcon(QIcon('./img/plus.png'))
+        self.add_process_button.setIconSize(QSize(24, 24))
+        self.add_process_button.clicked.connect(self.parent_widget.add_empty_process)
+
         self.launch_button = QPushButton(self)
         self.launch_button.setText("Launch all")
-        self.launch_button.clicked.connect(self.parent_widget.container.run_all)
+        self.launch_button.clicked.connect(
+            self.parent_widget.container.run_all)
 
         self.stop_button = QPushButton(self)
         self.stop_button.setText("Stop this group's processes")
-        self.stop_button.clicked.connect(self.parent_widget.container.kill_them_all)
+        self.stop_button.clicked.connect(
+            self.parent_widget.container.kill_them_all)
 
-        self.init_layout()
+        self._init_layout()
 
-    def init_layout(self):
+    def _init_layout(self):
         self.widget_layout = QVBoxLayout()
         title_and_delete_layout = QHBoxLayout()
         title_and_delete_layout.addWidget(self.title)
         title_and_delete_layout.addWidget(self.delete_button)
+        title_and_delete_layout.addWidget(self.add_process_button)
         self.widget_layout.addLayout(title_and_delete_layout)
         self.widget_layout.addWidget(self.launch_button)
         self.widget_layout.addWidget(self.stop_button)
@@ -101,17 +119,26 @@ class _ProcessContainer(QWidget):
     def __init__(self, parent):
         super(_ProcessContainer, self).__init__(parent)
         self.parent_widget = parent
-        self.init_layout()
+        self._init_layout()
         self.elements = set()
 
-    def init_layout(self):
+    def _init_layout(self):
         self.widget_layout = QGridLayout()
         self.setLayout(self.widget_layout)
+
+    def adjust_processes_to_layout(self):
+        # TODO
+        pass
 
     def add_element(self, element):
         self.widget_layout.addWidget(element, len(self.elements) / self.parent_widget.n_columns,
                                      len(self.elements) % self.parent_widget.n_columns)
         self.elements.add(element)
+
+    def remove_element(self, element):
+        self.elements.remove(element)
+        element.deleteLater()
+        self.adjust_processes_to_layout()
 
     def run_all(self):
         for process_widget in self.elements:
