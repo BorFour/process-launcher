@@ -1,5 +1,11 @@
 
 
+from enum import Enum
+
+class AppMode(Enum):
+    LAUNCH = 0
+    EDIT = 1
+
 def clearLayout(layout):
     """Deletes the widget in a layout."""
     while layout.count():

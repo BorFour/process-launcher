@@ -1,11 +1,13 @@
 
 import PyQt5.QtCore
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, QObjectCleanupHandler
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel,
-                             QHBoxLayout, QVBoxLayout, QPushButton)
+                             QHBoxLayout, QVBoxLayout, QPushButton,
+                             QLineEdit)
 
 from process_widget import ProcessWidget
+from utils import AppMode
 
 empty_group_data = {
     "name": "",
@@ -18,11 +20,10 @@ class ProcessGroup(QWidget):
 
     def __init__(self, window=None, name=None):
         super(ProcessGroup, self).__init__(window)
+        self.app_mode = window.app_mode
         self.parent_widget = window
         self.container = _ProcessContainer(self)
         self.header = _ProcessGroupHeader(self, name)
-        # self.header = QLabel(name or 'This is the header of the process group')
-        # self.container = ProcessWidget(self)
         self._init_style()
         self._init_layout()
         self.n_columns = 2
@@ -62,6 +63,11 @@ class ProcessGroup(QWidget):
 
         return ret
 
+    def change_mode(self, mode: AppMode):
+        self.app_mode = mode
+        self.header.change_mode(mode)
+        self.container.change_mode(mode)
+
     def add_empty_process(self):
         process_widget = ProcessWidget.create_empty_process(self)
         self.add_element(process_widget)
@@ -75,21 +81,12 @@ class _ProcessGroupHeader(QWidget):
 
     def __init__(self, window, name=None):
         super(_ProcessGroupHeader, self).__init__(window)
+        self.app_mode = window.app_mode
         self.name = name
         self.parent_widget = window
         self.title = QLabel(self.name or 'Group of processes')
         self.title.setAlignment(PyQt5.QtCore.Qt.AlignHCenter)
 
-        self.delete_button = QPushButton(self)
-        self.delete_button.setIcon(QIcon('./img/trash.png'))
-        self.delete_button.setIconSize(QSize(24, 24))
-        self.delete_button.clicked.connect(self.parent_widget.delete)
-
-        self.add_process_button = QPushButton(self)
-        self.add_process_button.setIcon(QIcon('./img/plus.png'))
-        self.add_process_button.setIconSize(QSize(24, 24))
-        self.add_process_button.clicked.connect(
-            self.parent_widget.add_empty_process)
 
         self.launch_button = QPushButton(self)
         self.launch_button.setText("Launch all")
@@ -101,24 +98,85 @@ class _ProcessGroupHeader(QWidget):
         self.stop_button.clicked.connect(
             self.parent_widget.container.kill_them_all)
 
+        self.delete_button = None
+        self.add_process_button = None
+        self.create_variable_widgets(self.app_mode)
+
+        self.widget_layout = None
         self._init_layout()
 
     def _init_layout(self):
+        """
+        See:
+            https://stackoverflow.com/questions/10416582/replacing-layout-on-a-qwidget-with-another-layout?lq=1
+        """
+        if self.layout():
+            QObjectCleanupHandler().add(self.layout())
+
         self.widget_layout = QVBoxLayout()
-        title_and_delete_layout = QHBoxLayout()
-        title_and_delete_layout.addWidget(self.title)
-        title_and_delete_layout.addWidget(self.delete_button)
-        title_and_delete_layout.addWidget(self.add_process_button)
-        self.widget_layout.addLayout(title_and_delete_layout)
+        self.title_and_delete_layout = QHBoxLayout()
+        self.title_and_delete_layout.addWidget(self.title)
+        if self.delete_button:
+            self.title_and_delete_layout.addWidget(self.delete_button)
+        if self.add_process_button:
+            self.title_and_delete_layout.addWidget(self.add_process_button)
+        self.widget_layout.addLayout(self.title_and_delete_layout)
         self.widget_layout.addWidget(self.launch_button)
         self.widget_layout.addWidget(self.stop_button)
         self.setLayout(self.widget_layout)
 
+    def create_variable_widgets(self, mode):
+        if self.delete_button:
+            self.delete_button.deleteLater()
+        if self.add_process_button:
+            self.add_process_button.deleteLater()
+
+
+        if mode == AppMode.LAUNCH:
+            self.delete_button = None
+            self.add_process_button = None
+        elif mode == AppMode.EDIT:
+            self.delete_button = QPushButton(self)
+            self.delete_button.setIcon(QIcon('./img/trash.png'))
+            self.delete_button.setIconSize(QSize(24, 24))
+            self.delete_button.clicked.connect(self.parent_widget.delete)
+
+            self.add_process_button = QPushButton(self)
+            self.add_process_button.setIcon(QIcon('./img/plus.png'))
+            self.add_process_button.setIconSize(QSize(24, 24))
+            self.add_process_button.clicked.connect(
+                self.parent_widget.add_empty_process)
+
+    def change_to_launch(self):
+        old_title = self.title
+        self.title = QLabel(old_title.text())
+        old_title.deleteLater()
+
+        self.create_variable_widgets(self.app_mode)
+
+        self._init_layout()
+
+    def change_to_edit(self):
+        old_title = self.title
+        self.title = QLineEdit(old_title.text())
+        old_title.deleteLater()
+
+        self.create_variable_widgets(self.app_mode)
+
+        self._init_layout()
+
+    def change_mode(self, mode: AppMode):
+        self.app_mode = mode
+        if mode == AppMode.LAUNCH:
+            self.change_to_launch()
+        elif mode == AppMode.EDIT:
+            self.change_to_edit()
 
 class _ProcessContainer(QWidget):
 
     def __init__(self, parent):
         super(_ProcessContainer, self).__init__(parent)
+        self.app_mode = parent.app_mode
         self.parent_widget = parent
         self._init_layout()
         self.elements = set()
@@ -155,3 +213,8 @@ class _ProcessContainer(QWidget):
         for d in data:
             p = ProcessWidget(self, d["args"], directory=d["dir"])
             self.add_element(p)
+
+    def change_mode(self, mode: AppMode):
+        self.app_mode = mode
+        for process in self.elements:
+            process.change_mode(mode)

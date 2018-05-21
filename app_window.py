@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QFileDialog, QMessageBox)
 
 import utils
+from utils import AppMode
 from process_group_widget import ProcessGroup, empty_group_data
 
 logger = logging.getLogger('process_launcher')
@@ -25,6 +26,7 @@ class AppWidget(QWidget):
         self.init_size()
         self._init_layout()
         self.clear_groups()
+        self.app_mode = AppMode.LAUNCH
 
     def clear_groups(self):
         """Removes all the widgets in this widget's layout."""
@@ -82,6 +84,17 @@ class AppWidget(QWidget):
             group.container.kill_them_all()
         self.clear_groups()
 
+    def change_mode(self, mode: AppMode):
+        for group in self.group_widgets:
+            group.change_mode(mode)
+
+        self.app_mode = mode
+
+    def toggle_edit(self):
+        if self.app_mode == AppMode.LAUNCH:
+            self.change_mode(AppMode.EDIT)
+        elif self.app_mode == AppMode.EDIT:
+            self.change_mode(AppMode.LAUNCH)
 
 class AppWindow(QMainWindow):
     """docstring for AppWindow"""
@@ -108,6 +121,7 @@ class AppWindow(QMainWindow):
 
     def init_menubar(self):
         self.fileMenu = self.menuBar().addMenu("File")
+        self.editMenu = self.menuBar().addMenu("Edit")
         self.groupMenu = self.menuBar().addMenu("Group")
         self.viewMenu = self.menuBar().addMenu("View")
 
@@ -117,8 +131,9 @@ class AppWindow(QMainWindow):
         importProcesses.setStatusTip('Import processes from a JSON file')
         importProcesses.triggered.connect(self.browse_profile_json)
 
-        clearGroups = QAction('Clear groups', self)
-        clearGroups.triggered.connect(self.centralWidget.clear_groups)
+        self.clearGroups = QAction('Clear groups', self)
+        self.clearGroups.triggered.connect(self.centralWidget.clear_groups)
+        self.clearGroups.setEnabled(False)
 
         # saveProfile = QAction(QIcon('img/save.png'), 'Save', self)
         # saveProfile.setShortcut('Ctrl+S')
@@ -130,16 +145,24 @@ class AppWindow(QMainWindow):
         self.fileMenu.addAction(importProcesses)
         self.fileMenu.addAction(saveAsProfile)
 
-        self.newGroup = self.groupMenu.addMenu("New")
-        self.groupMenu.addAction(clearGroups)
-        newEmtpyGroup = QAction('Empty group', self)
-        newEmtpyGroup.setStatusTip(
-            'Create a new empty group to the right of the existing ones')
-        newEmtpyGroup.setShortcut('Ctrl+N')
-        newEmtpyGroup.triggered.connect(
-            self.centralWidget.add_empty_group_right)
+        toggleEditMode = QAction(QIcon('img/edit.png'), 'Toggle edit mode', self)
+        toggleEditMode.setShortcut('Ctrl+E')
+        toggleEditMode.triggered.connect(self.toggle_edit)
 
-        self.newGroup.addAction(newEmtpyGroup)
+        self.editMenu.addAction(toggleEditMode)
+
+        self.newGroup = self.groupMenu.addMenu("New")
+        self.groupMenu.addAction(self.clearGroups)
+        self.newEmtpyGroup = QAction('Empty group', self)
+        self.newEmtpyGroup.setStatusTip(
+            'Create a new empty group to the right of the existing ones')
+        self.newEmtpyGroup.setShortcut('Ctrl+N')
+        self.newEmtpyGroup.triggered.connect(
+            self.centralWidget.add_empty_group_right)
+        self.newEmtpyGroup.setEnabled(False)
+
+        self.newGroup.addAction(self.newEmtpyGroup)
+
 
     def load_profile(self, filename: str):
         logger.info("Loading {}".format(filename))
@@ -183,6 +206,22 @@ class AppWindow(QMainWindow):
             return file_name
         else:
             return None
+
+    def change_to_launch(self):
+        self.newEmtpyGroup.setEnabled(False)
+        self.clearGroups.setEnabled(False)
+
+    def change_to_edit(self):
+        self.newEmtpyGroup.setEnabled(True)
+        self.clearGroups.setEnabled(True)
+
+    def toggle_edit(self):
+        self.centralWidget.toggle_edit()
+        mode = self.centralWidget.app_mode
+        if mode == AppMode.LAUNCH:
+            self.change_to_launch()
+        elif mode == AppMode.EDIT:
+            self.change_to_edit()
 
     def closeEvent(self, event):
         close = QMessageBox()
