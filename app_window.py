@@ -15,6 +15,7 @@ from process_group_widget import ProcessGroup, empty_group_data
 
 logger = logging.getLogger('process_launcher')
 
+
 class AppWidget(QWidget):
     """docstring for AppWidget"""
 
@@ -44,8 +45,8 @@ class AppWidget(QWidget):
         # utils.clearLayout(self.widget_layout)
         for i, process_group in enumerate(self.group_widgets):
             self.widget_layout.addWidget(
-            process_group, i / self.n_columns,
-            i % self.n_columns)
+                process_group, i / self.n_columns,
+                i % self.n_columns)
 
     def create_groups_from_dict(self, data: dict):
         self.clear_groups()
@@ -96,6 +97,7 @@ class AppWidget(QWidget):
         elif self.app_mode == AppMode.EDIT:
             self.change_mode(AppMode.LAUNCH)
 
+
 class AppWindow(QMainWindow):
     """docstring for AppWindow"""
 
@@ -145,7 +147,8 @@ class AppWindow(QMainWindow):
         self.fileMenu.addAction(importProcesses)
         self.fileMenu.addAction(saveAsProfile)
 
-        toggleEditMode = QAction(QIcon('img/edit.png'), 'Toggle edit mode', self)
+        toggleEditMode = QAction(
+            QIcon('img/edit.png'), 'Toggle edit mode', self)
         toggleEditMode.setShortcut('Ctrl+E')
         toggleEditMode.triggered.connect(self.toggle_edit)
 
@@ -162,7 +165,6 @@ class AppWindow(QMainWindow):
         self.newEmtpyGroup.setEnabled(False)
 
         self.newGroup.addAction(self.newEmtpyGroup)
-
 
     def load_profile(self, filename: str):
         logger.info("Loading {}".format(filename))

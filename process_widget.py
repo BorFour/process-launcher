@@ -1,11 +1,12 @@
 
 import subprocess
 
-from PyQt5.QtCore import QSize, QObjectCleanupHandler, Qt
+from PyQt5.QtCore import QSize, QObjectCleanupHandler
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QLabel, QHBoxLayout, QVBoxLayout,
-    QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView)
+    QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView,
+    QMenu)
 
 from utils import AppMode
 
@@ -13,10 +14,13 @@ DEFAULT_DIRECTORY = "~/"
 
 empty_process_data = {
     "name": "empty process",
-    "dir" : DEFAULT_DIRECTORY,
-    "args": [],
+    "dir": DEFAULT_DIRECTORY,
+    "args": [
+        " "
+    ],
     "description": "This is an empty process template"
 }
+
 
 class Process(object):
     """docstring for Process"""
@@ -62,10 +66,12 @@ class Process(object):
         ], shell=False)
 
     def kill(self):
-        if self.popen: self.popen.kill()
+        if self.popen:
+            self.popen.kill()
 
     def terminate(self):
-        if self.popen: self.popen.terminate()
+        if self.popen:
+            self.popen.terminate()
         self.popen = None
 
 
@@ -113,7 +119,6 @@ class ProcessWidget(QWidget):
         else:
             self.close_button = None
 
-
     def _init_args_table(self, *args):
         # TODO: add something to add more arguments
         self.args_table_widget = QTableWidget()
@@ -144,6 +149,47 @@ class ProcessWidget(QWidget):
         self.vbox.addLayout(self.hbox3)
         self.setLayout(self.vbox)
 
+    def contextMenuEvent(self, event):
+
+        n_items = len(self.args_table_widget.selectedItems())
+
+        if n_items == 0:
+            return
+
+        context_menu = QMenu(self)
+        addNewRowBefore = context_menu.addAction("Add cell before")
+        addNewRowAfter = context_menu.addAction("Add cell after")
+        deleteRow = context_menu.addAction(
+            "Delete cells" if n_items > 1 else "Delete cell")
+
+        if self.app_mode == AppMode.LAUNCH:
+            addNewRowBefore.setEnabled(False)
+            addNewRowAfter.setEnabled(False)
+            deleteRow.setEnabled(False)
+        elif self.app_mode == AppMode.EDIT:
+            addNewRowBefore.setEnabled(True)
+            addNewRowAfter.setEnabled(True)
+            deleteRow.setEnabled(True)
+
+        mousePositionAtEvent = event.pos()
+        action = context_menu.exec_(self.mapToGlobal(mousePositionAtEvent))
+
+        if action == addNewRowBefore:
+            first_item = self.args_table_widget.selectedItems()[0]
+            self.add_new_arg(pos=first_item.row())
+        elif action == addNewRowAfter:
+            last_item = self.args_table_widget.selectedItems()[-1]
+            self.add_new_arg(pos=last_item.row() + 1)
+        elif action == deleteRow:
+            for item in self.args_table_widget.selectedItems():
+                self.args_table_widget.removeRow(item.row())
+
+    def add_new_arg(self, arg=None, pos=None):
+        arg = arg or " "
+        pos = QTableWidget().rowCount() if pos is None else pos
+        self.args_table_widget.insertRow(pos)
+        self.args_table_widget.setItem(0, pos, QTableWidgetItem(arg))
+
     def close(self):
         self.parent_widget.remove_element(self)
 
@@ -155,7 +201,8 @@ class ProcessWidget(QWidget):
         old_directory = self.directory_widget
         self.directory_widget = QLabel(old_directory.text())
         old_directory.deleteLater()
-        self.args_table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.args_table_widget.setEditTriggers(
+            QAbstractItemView.NoEditTriggers)
 
         self.create_variable_widgets(self.app_mode)
 
@@ -166,12 +213,12 @@ class ProcessWidget(QWidget):
         self.directory_widget = QLineEdit(old_directory.text())
         self.directory_widget.setPlaceholderText("Current workdir")
         old_directory.deleteLater()
-        self.args_table_widget.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.SelectedClicked)
+        self.args_table_widget.setEditTriggers(
+            QAbstractItemView.DoubleClicked | QAbstractItemView.SelectedClicked)
 
         self.create_variable_widgets(self.app_mode)
 
         self._init_layout()
-
 
     def change_mode(self, mode: AppMode):
         self.app_mode = mode

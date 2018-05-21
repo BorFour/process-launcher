@@ -87,7 +87,6 @@ class _ProcessGroupHeader(QWidget):
         self.title = QLabel(self.name or 'Group of processes')
         self.title.setAlignment(PyQt5.QtCore.Qt.AlignHCenter)
 
-
         self.launch_button = QPushButton(self)
         self.launch_button.setText("Launch all")
         self.launch_button.clicked.connect(
@@ -131,7 +130,6 @@ class _ProcessGroupHeader(QWidget):
         if self.add_process_button:
             self.add_process_button.deleteLater()
 
-
         if mode == AppMode.LAUNCH:
             self.delete_button = None
             self.add_process_button = None
@@ -171,6 +169,7 @@ class _ProcessGroupHeader(QWidget):
             self.change_to_launch()
         elif mode == AppMode.EDIT:
             self.change_to_edit()
+
 
 class _ProcessContainer(QWidget):
 
