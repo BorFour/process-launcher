@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView,
     QMenu)
 
-from utils import AppMode
+from utils import AppMode, ProcessStatus
 
 DEFAULT_DIRECTORY = "~/"
 
@@ -22,15 +22,26 @@ empty_process_data = {
 }
 
 
-class Process(object):
-    """docstring for Process"""
+class PopenProcess(object):
+    """docstring for PopenProcess"""
 
     def __init__(self, args_table_widget: QTableWidget, name=None, directory_widget=None):
-        super(Process, self).__init__()
+        super(PopenProcess, self).__init__()
         self.args_table_widget = args_table_widget
         self.name = name
         self.directory_widget = directory_widget
         self.popen = None
+
+    @property
+    def status(self) -> ProcessStatus:
+        if not self.popen or self.popen:
+            return ProcessStatus.STOPPED
+        return_code = self.popen.poll()
+        if not return_code:
+            return ProcessStatus.RUNNING
+        # TODO: switch the values of return_code (POSIX only)
+        else:
+            return ProcessStatus.STOPPED
 
     @property
     def args(self) -> list:
@@ -44,26 +55,13 @@ class Process(object):
     def directory(self) -> str:
         return self.directory_widget.text()
 
-    def create_command(self) -> str:
-        command = "{}".format(self.args[0])
-        for argument in self.args[1:]:
-            command += " {}".format(argument)
-        return command
-
     def restart(self):
         if self.popen:
             self.kill()
         self.run()
 
     def run(self):
-        self.popen = subprocess.Popen(args=[
-            'konsole',
-            '--workdir', self.directory,
-            # Run the new instance of Konsole in a separate process.
-            '--noclose',
-            '--separate',
-            '-e', '{}'.format(self.create_command())
-        ], shell=False)
+        raise NotImplementedError("Method 'run' not implemented")
 
     def kill(self):
         if self.popen:
@@ -73,6 +71,30 @@ class Process(object):
         if self.popen:
             self.popen.terminate()
         self.popen = None
+
+    def transform_to(self, cls):
+        """Transform this process into an instance of another class."""
+        return cls(args_table_widget=self.args_table_widget,
+                   name=self.name,
+                   directory_widget=self.directory_widget)
+
+
+class KonsoleProcess(PopenProcess):
+    def create_command(self) -> str:
+        command = "{}".format(self.args[0])
+        for argument in self.args[1:]:
+            command += " {}".format(argument)
+        return command
+
+    def run(self):
+        self.popen = subprocess.Popen(args=[
+            'konsole',
+            '--workdir', self.directory,
+            # Run the new instance of Konsole in a separate process.
+            '--noclose',
+            # '--separate',
+            '-e', '{}'.format(self.create_command())
+        ], shell=False)
 
 
 class ProcessWidget(QWidget):
@@ -92,9 +114,9 @@ class ProcessWidget(QWidget):
         self._init_args_table(self.args)
 
         self.directory_widget = QLabel(directory)
-        self.process = Process(self.args_table_widget,
-                               name=name or "process {}".format(
-                                   ProcessWidget.n_processes), directory_widget=self.directory_widget or DEFAULT_DIRECTORY)
+        self.process = KonsoleProcess(self.args_table_widget,
+                                      name=name or "process {}".format(
+                                          ProcessWidget.n_processes), directory_widget=self.directory_widget or DEFAULT_DIRECTORY)
 
         self.restart_button = QPushButton(self)
         self.restart_button.setIcon(QIcon('./img/arrow_restart.png'))
@@ -120,7 +142,6 @@ class ProcessWidget(QWidget):
             self.close_button = None
 
     def _init_args_table(self, *args):
-        # TODO: add something to add more arguments
         self.args_table_widget = QTableWidget()
         self.args_table_widget.setRowCount(0)
         self.args_table_widget.setColumnCount(1)
@@ -150,7 +171,6 @@ class ProcessWidget(QWidget):
         self.setLayout(self.vbox)
 
     def contextMenuEvent(self, event):
-
         n_items = len(self.args_table_widget.selectedItems())
 
         if n_items == 0:

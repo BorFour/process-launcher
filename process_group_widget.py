@@ -4,7 +4,7 @@ from PyQt5.QtCore import QSize, QObjectCleanupHandler
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel,
                              QHBoxLayout, QVBoxLayout, QPushButton,
-                             QLineEdit)
+                             QLineEdit, QShortcut)
 
 from process_widget import ProcessWidget
 from utils import AppMode
@@ -18,8 +18,9 @@ empty_group_data = {
 class ProcessGroup(QWidget):
     """docstring for ProcessGroup"""
 
-    def __init__(self, window=None, name=None):
+    def __init__(self, window=None, name=None, group_number=-1):
         super(ProcessGroup, self).__init__(window)
+        self.group_number = group_number
         self.app_mode = window.app_mode
         self.parent_widget = window
         self.container = _ProcessContainer(self)
@@ -68,6 +69,10 @@ class ProcessGroup(QWidget):
         self.header.change_mode(mode)
         self.container.change_mode(mode)
 
+    def update_group_number(self, n):
+        self.group_number = n
+        self.header.create_shorcut_buttons()
+
     def add_empty_process(self):
         process_widget = ProcessWidget.create_empty_process(self)
         self.add_element(process_widget)
@@ -82,27 +87,25 @@ class _ProcessGroupHeader(QWidget):
     def __init__(self, window, name=None):
         super(_ProcessGroupHeader, self).__init__(window)
         self.app_mode = window.app_mode
-        self.name = name
         self.parent_widget = window
-        self.title = QLabel(self.name or 'Group of processes')
+
+        # This will be overwritten later
+        self.title = QLabel(name or 'Group of processes')
         self.title.setAlignment(PyQt5.QtCore.Qt.AlignHCenter)
 
-        self.launch_button = QPushButton(self)
-        self.launch_button.setText("Launch all")
-        self.launch_button.clicked.connect(
-            self.parent_widget.container.run_all)
-
-        self.stop_button = QPushButton(self)
-        self.stop_button.setText("Stop this group's processes")
-        self.stop_button.clicked.connect(
-            self.parent_widget.container.kill_them_all)
-
+        self.launch_button = None
+        self.stop_button = None
         self.delete_button = None
         self.add_process_button = None
         self.create_variable_widgets(self.app_mode)
+        self.create_shorcut_buttons()
 
         self.widget_layout = None
         self._init_layout()
+
+    @property
+    def name(self):
+        return self.title.text() if self.title else ""
 
     def _init_layout(self):
         """
@@ -124,16 +127,27 @@ class _ProcessGroupHeader(QWidget):
         self.widget_layout.addWidget(self.stop_button)
         self.setLayout(self.widget_layout)
 
+    def safe_delete(self, widgets):
+        for widget in widgets:
+            if widget:
+                widget.deleteLater()
+
     def create_variable_widgets(self, mode):
-        if self.delete_button:
-            self.delete_button.deleteLater()
-        if self.add_process_button:
-            self.add_process_button.deleteLater()
+        self.safe_delete([self.delete_button, self.add_process_button])
 
         if mode == AppMode.LAUNCH:
             self.delete_button = None
             self.add_process_button = None
+
+            old_title = self.title
+            self.title = QLabel(self.name)
+            self.title.setAlignment(PyQt5.QtCore.Qt.AlignHCenter)
+            old_title.deleteLater()
         elif mode == AppMode.EDIT:
+            old_title = self.title
+            self.title = QLineEdit(self.name)
+            old_title.deleteLater()
+
             self.delete_button = QPushButton(self)
             self.delete_button.setIcon(QIcon('./img/trash.png'))
             self.delete_button.setIconSize(QSize(24, 24))
@@ -145,22 +159,33 @@ class _ProcessGroupHeader(QWidget):
             self.add_process_button.clicked.connect(
                 self.parent_widget.add_empty_process)
 
+    def create_shorcut_buttons(self):
+        self.safe_delete([self.launch_button, self.stop_button])
+
+        # These buttons need to be created again when other groups are deleted,
+        # in order to update the shortcut
+        self.launch_button = QPushButton(self)
+        self.launch_button.setText("Launch all")
+        self.launch_button.clicked.connect(
+            self.parent_widget.container.run_all)
+
+        alt_num_action = QShortcut('Alt+{}'.format(self.parent_widget.group_number+1), self.launch_button)
+        alt_num_action.activated.connect(self.launch_button.click)
+
+        self.stop_button = QPushButton(self)
+        self.stop_button.setText("Stop this group's processes")
+        self.stop_button.clicked.connect(
+            self.parent_widget.container.kill_them_all)
+
+        alt_shift_num_action = QShortcut('Alt+Shift+{}'.format(self.parent_widget.group_number+1), self.stop_button)
+        alt_shift_num_action.activated.connect(self.stop_button.click)
+
     def change_to_launch(self):
-        old_title = self.title
-        self.title = QLabel(old_title.text())
-        old_title.deleteLater()
-
         self.create_variable_widgets(self.app_mode)
-
         self._init_layout()
 
     def change_to_edit(self):
-        old_title = self.title
-        self.title = QLineEdit(old_title.text())
-        old_title.deleteLater()
-
         self.create_variable_widgets(self.app_mode)
-
         self._init_layout()
 
     def change_mode(self, mode: AppMode):
