@@ -88,7 +88,8 @@ class _ProcessGroupHeader(QWidget):
         self.add_process_button = QPushButton(self)
         self.add_process_button.setIcon(QIcon('./img/plus.png'))
         self.add_process_button.setIconSize(QSize(24, 24))
-        self.add_process_button.clicked.connect(self.parent_widget.add_empty_process)
+        self.add_process_button.clicked.connect(
+            self.parent_widget.add_empty_process)
 
         self.launch_button = QPushButton(self)
         self.launch_button.setText("Launch all")
@@ -127,8 +128,9 @@ class _ProcessContainer(QWidget):
         self.setLayout(self.widget_layout)
 
     def adjust_processes_to_layout(self):
-        # TODO
-        pass
+        for i, element in enumerate(self.elements):
+            self.widget_layout.addWidget(element, i / self.parent_widget.n_columns,
+                                         i % self.parent_widget.n_columns)
 
     def add_element(self, element):
         self.widget_layout.addWidget(element, len(self.elements) / self.parent_widget.n_columns,
