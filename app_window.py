@@ -8,10 +8,11 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QAction, QFileDialog, QMessageBox)
 
-from utils import AppMode
+from utils import AppMode, get_platform
 from app_widget import AppWidget
 
 logger = logging.getLogger('process_launcher')
+
 
 class AppWindow(QMainWindow):
     """docstring for AppWindow"""
@@ -157,6 +158,7 @@ class AppWindow(QMainWindow):
 
 
 def main():
+    print(get_platform())
     app = QApplication(sys.argv)
     window = AppWindow(sys.argv[1] if len(sys.argv) > 1 else None)
     window.show()

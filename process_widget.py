@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView,
     QMenu)
 
-from utils import AppMode
-from process import KonsoleProcess, CustomWindowsProcess
+from utils import AppMode, parse_dropped_file
+from process import CurrentPlatformProcess
 
 DEFAULT_DIRECTORY = "~/"
 
@@ -39,9 +39,9 @@ class ProcessWidget(QWidget):
         self._init_args_table(self.args)
 
         self.directory_widget = QLabel(directory)
-        self.process = CustomWindowsProcess(self.args_table_widget,
-                                      name=name or "process {}".format(
-                                          ProcessWidget.n_processes), directory_widget=self.directory_widget or DEFAULT_DIRECTORY)
+        self.process = CurrentPlatformProcess(self.args_table_widget,
+                                              name=name or "process {}".format(
+                                                  ProcessWidget.n_processes), directory_widget=self.directory_widget or DEFAULT_DIRECTORY)
 
         self.restart_button = QPushButton(self)
         self.restart_button.setIcon(QIcon('./img/arrow_restart.png'))
@@ -139,7 +139,7 @@ class ProcessWidget(QWidget):
         # event.mimeData().hasFormat('text/plain')
         text = event.mimeData().text()
         print(text)
-        text = text.replace("file:///", "")
+        text = parse_dropped_file(text)
         self.add_new_arg(arg=text, pos=0)
 
     def add_new_arg(self, arg=None, pos=None):

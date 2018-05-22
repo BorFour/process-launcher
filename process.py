@@ -1,7 +1,8 @@
 
 import subprocess
 
-from utils import ProcessStatus
+from utils import ProcessStatus, kill_command_windows, get_platform, SupportedPlatforms
+
 
 class PopenProcess(object):
     """docstring for PopenProcess"""
@@ -65,7 +66,10 @@ class LinuxProcess(PopenProcess):
 
 
 class WindowsProcess(PopenProcess):
-    pass
+    def kill(self):
+        """self.popen.kill doesn't work on Windows."""
+        if self.popen:
+            kill_command_windows(self.popen.pid)
 
 
 class KonsoleProcess(LinuxProcess):
@@ -91,3 +95,8 @@ class CustomWindowsProcess(WindowsProcess):
         self.popen = subprocess.Popen(args=[
             *self.args
         ], shell=True)
+
+
+CurrentPlatformProcess = KonsoleProcess if get_platform(
+) == SupportedPlatforms.LINUX else CustomWindowsProcess
+"""Depending on the platform, a default process is selected."""
