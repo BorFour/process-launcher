@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QMenu)
 
 from utils import AppMode, browse_existing_directory
-from process import KonsoleProcess, CustomWindowsProcess
+from process import CurrentPlatformProcess
 
 DEFAULT_DIRECTORY = "~/"
 
