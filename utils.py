@@ -5,6 +5,7 @@ import os
 import subprocess
 from enum import Enum
 
+from PyQt5.QtWidgets import (QFileDialog)
 
 class AppMode(Enum):
     LAUNCH = 0
@@ -46,6 +47,12 @@ def clearLayout(layout):
             child.widget().deleteLater()
         elif child.layout() is not None:
             clearLayout(child.layout())
+
+def browse_existing_directory(widget, dialog_text) -> str:
+    options = QFileDialog.Options()
+    options |= QFileDialog.DontUseNativeDialog
+    filename = str(QFileDialog.getExistingDirectory(widget, dialog_text, options=options))
+    return filename
 
 
 def kill_command_windows(pid):

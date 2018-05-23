@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView,
     QMenu)
 
-from utils import AppMode, parse_dropped_file
-from process import CurrentPlatformProcess
+from utils import AppMode, browse_existing_directory
+from process import KonsoleProcess, CustomWindowsProcess
 
 DEFAULT_DIRECTORY = "~/"
 
@@ -49,22 +49,44 @@ class ProcessWidget(QWidget):
         self.restart_button.clicked.connect(self.process.restart)
 
         self.close_button = None
+        self.browse_folder_button = None
         self.create_variable_widgets(self.app_mode)
 
         ProcessWidget.n_processes += 1
         self._init_layout()
 
     def create_variable_widgets(self, mode):
+
+        if self.directory_widget:
+            directory_name = self.directory_widget.text()
+            self.directory_widget.deleteLater()
+
         if self.close_button:
             self.close_button.deleteLater()
 
+        if self.browse_folder_button:
+            self.browse_folder_button.deleteLater()
+
         if mode == AppMode.EDIT:
+            self.directory_widget = QLineEdit(directory_name)
+            self.directory_widget.setPlaceholderText("Current workdir")
+
             self.close_button = QPushButton(self)
             self.close_button.setIcon(QIcon('./img/close.png'))
             self.close_button.setIconSize(QSize(24, 24))
             self.close_button.clicked.connect(self.close)
+
+            self.browse_folder_button = QPushButton(self)
+            self.browse_folder_button.setIcon(QIcon('./img/folder_browse.png'))
+            self.browse_folder_button.setIconSize(QSize(24, 24))
+            self.browse_folder_button.clicked.connect(self.browse_directory_name)
+
         else:
+
+            self.directory_widget = QLabel(directory_name)
+
             self.close_button = None
+            self.browse_folder_button = None
 
     def _init_args_table(self, *args):
         self.args_table_widget = QTableWidget()
@@ -80,6 +102,9 @@ class ProcessWidget(QWidget):
 
         self.hbox1 = QHBoxLayout()
         self.hbox1.addWidget(self.directory_widget)
+        if self.browse_folder_button:
+            self.hbox1.addWidget(self.browse_folder_button)
+
         if self.close_button:
             self.hbox1.addWidget(self.close_button)
 
@@ -142,6 +167,12 @@ class ProcessWidget(QWidget):
         text = parse_dropped_file(text)
         self.add_new_arg(arg=text, pos=0)
 
+    def browse_directory_name(self):
+        filename = browse_existing_directory(self, "Select a folder")
+        if filename:
+            print(filename)
+            self.directory_widget.setText(filename)
+
     def add_new_arg(self, arg=None, pos=None):
         arg = arg or " "
         pos = QTableWidget().rowCount() if pos is None else pos
@@ -156,9 +187,7 @@ class ProcessWidget(QWidget):
         self.process.args_table_widget = self.args_table_widget
 
     def change_to_launch(self):
-        old_directory = self.directory_widget
-        self.directory_widget = QLabel(old_directory.text())
-        old_directory.deleteLater()
+
         self.args_table_widget.setEditTriggers(
             QAbstractItemView.NoEditTriggers)
 
@@ -167,10 +196,6 @@ class ProcessWidget(QWidget):
         self._init_layout()
 
     def change_to_edit(self):
-        old_directory = self.directory_widget
-        self.directory_widget = QLineEdit(old_directory.text())
-        self.directory_widget.setPlaceholderText("Current workdir")
-        old_directory.deleteLater()
         self.args_table_widget.setEditTriggers(
             QAbstractItemView.DoubleClicked | QAbstractItemView.SelectedClicked)
 
