@@ -77,6 +77,14 @@ class ProcessGroup(QWidget):
         process_widget = ProcessWidget.create_empty_process(self)
         self.add_element(process_widget)
 
+    def minimize_all_processes(self):
+        for widget in self.container.elements:
+            widget.process.minimize()
+
+    def restore_all_processes(self):
+        for widget in self.container.elements:
+            widget.process.restore()
+
     def delete(self):
         """Delete this group."""
         self.parent_widget.delete_group(self)
@@ -169,7 +177,8 @@ class _ProcessGroupHeader(QWidget):
         self.launch_button.clicked.connect(
             self.parent_widget.container.run_all)
 
-        alt_num_action = QShortcut('Alt+{}'.format(self.parent_widget.group_number+1), self.launch_button)
+        alt_num_action = QShortcut(
+            'Alt+{}'.format(self.parent_widget.group_number + 1), self.launch_button)
         alt_num_action.activated.connect(self.launch_button.click)
 
         self.stop_button = QPushButton(self)
@@ -177,7 +186,8 @@ class _ProcessGroupHeader(QWidget):
         self.stop_button.clicked.connect(
             self.parent_widget.container.kill_them_all)
 
-        alt_shift_num_action = QShortcut('Alt+Shift+{}'.format(self.parent_widget.group_number+1), self.stop_button)
+        alt_shift_num_action = QShortcut(
+            'Alt+Shift+{}'.format(self.parent_widget.group_number + 1), self.stop_button)
         alt_shift_num_action.activated.connect(self.stop_button.click)
 
     def change_to_launch(self):
@@ -226,7 +236,7 @@ class _ProcessContainer(QWidget):
 
     def run_all(self):
         for process_widget in self.elements:
-            process_widget.process.restart()  # REVIEW: or run?
+            process_widget.relaunch_process()  # REVIEW: or run?
 
     def kill_them_all(self):
         for process_widget in self.elements:

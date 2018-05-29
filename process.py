@@ -1,6 +1,8 @@
 
 import subprocess
 
+import shlex
+
 from utils import ProcessStatus, kill_command_windows, get_platform, SupportedPlatforms
 
 
@@ -37,6 +39,11 @@ class PopenProcess(object):
     def directory(self) -> str:
         return self.directory_widget.text()
 
+    @property
+    def pid(self) -> int:
+        return self.popen.pid if self.popen else None
+        # subprocess.Popen().pid
+
     def restart(self):
         if self.popen:
             self.kill()
@@ -62,7 +69,48 @@ class PopenProcess(object):
 
 
 class LinuxProcess(PopenProcess):
-    pass
+
+    @property
+    def window_id(self):
+        command = shlex.split('bash get_windowid.sh {}'.format(self.pid))
+        process = subprocess.Popen(args=command,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   shell=False)
+
+        (output, _) = process.communicate()
+        process.wait()
+
+        output = output.decode("utf-8")
+
+        return output.replace("\n", "")
+
+    def minimize(self):
+        if not self.window_id:
+            return
+
+        command = shlex.split(
+            'xdotool windowminimize {}'.format(self.window_id))
+        process = subprocess.Popen(args=command,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   shell=False)
+
+        (output, err) = process.communicate()
+        # process.wait()
+
+    def restore(self):
+        if not self.window_id:
+            return
+
+        command = shlex.split('xdotool windowmap {}'.format(self.window_id))
+        process = subprocess.Popen(args=command,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   shell=False)
+
+        (output, err) = process.communicate()
+        # process.wait()
 
 
 class WindowsProcess(PopenProcess):
@@ -70,6 +118,9 @@ class WindowsProcess(PopenProcess):
         """self.popen.kill doesn't work on Windows."""
         if self.popen:
             kill_command_windows(self.popen.pid)
+
+    def window_id(self):
+        pass
 
 
 class KonsoleProcess(LinuxProcess):

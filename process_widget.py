@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView,
     QMenu)
 
-from utils import AppMode, browse_existing_directory
+from utils import AppMode, browse_existing_directory, parse_dropped_file
 from process import CurrentPlatformProcess
 
 DEFAULT_DIRECTORY = "~/"
@@ -46,10 +46,11 @@ class ProcessWidget(QWidget):
         self.restart_button = QPushButton(self)
         self.restart_button.setIcon(QIcon('./img/arrow_restart.png'))
         self.restart_button.setIconSize(QSize(24, 24))
-        self.restart_button.clicked.connect(self.process.restart)
+        self.restart_button.clicked.connect(self.relaunch_process)
 
         self.close_button = None
         self.browse_folder_button = None
+        self.process_id_label = None
         self.create_variable_widgets(self.app_mode)
 
         ProcessWidget.n_processes += 1
@@ -61,11 +62,17 @@ class ProcessWidget(QWidget):
             directory_name = self.directory_widget.text()
             self.directory_widget.deleteLater()
 
+        if self.process_id_label:
+            self.process_id_label.deleteLater()
+
         if self.close_button:
             self.close_button.deleteLater()
 
         if self.browse_folder_button:
             self.browse_folder_button.deleteLater()
+
+        self.process_id_label = QLabel(
+            self.process.pid if self.process.pid else "stopped")
 
         if mode == AppMode.EDIT:
             self.directory_widget = QLineEdit(directory_name)
@@ -79,7 +86,8 @@ class ProcessWidget(QWidget):
             self.browse_folder_button = QPushButton(self)
             self.browse_folder_button.setIcon(QIcon('./img/folder_browse.png'))
             self.browse_folder_button.setIconSize(QSize(24, 24))
-            self.browse_folder_button.clicked.connect(self.browse_directory_name)
+            self.browse_folder_button.clicked.connect(
+                self.browse_directory_name)
 
         else:
 
@@ -102,6 +110,7 @@ class ProcessWidget(QWidget):
 
         self.hbox1 = QHBoxLayout()
         self.hbox1.addWidget(self.directory_widget)
+        self.hbox1.addWidget(self.process_id_label)
         if self.browse_folder_button:
             self.hbox1.addWidget(self.browse_folder_button)
 
@@ -181,6 +190,14 @@ class ProcessWidget(QWidget):
 
     def close(self):
         self.parent_widget.remove_element(self)
+
+    def relaunch_process(self):
+        self.process.restart()
+        print(self.process.pid)
+        print(self.process_id_label)
+        print('Window id: {}'.format(self.process.window_id))
+        if self.process_id_label:
+            self.process_id_label.setText("PID: {}".format(self.process.pid))
 
     def update_process_references(self):
         self.process.directory_widget = self.directory_widget

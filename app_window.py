@@ -41,6 +41,7 @@ class AppWindow(QMainWindow):
         self.fileMenu = self.menuBar().addMenu("File")
         self.editMenu = self.menuBar().addMenu("Edit")
         self.groupMenu = self.menuBar().addMenu("Group")
+        self.processesMenu = self.menuBar().addMenu("Processes")
         self.viewMenu = self.menuBar().addMenu("View")
 
         importProcesses = QAction(
@@ -81,6 +82,16 @@ class AppWindow(QMainWindow):
         self.newEmtpyGroup.setEnabled(False)
 
         self.newGroup.addAction(self.newEmtpyGroup)
+
+        minimizeAllProcesses = QAction('Minimize all processes', self)
+        minimizeAllProcesses.setShortcut('Ctrl+Down')
+        minimizeAllProcesses.triggered.connect(self.minimize_all_processes)
+        self.processesMenu.addAction(minimizeAllProcesses)
+
+        restoreAllProcesses = QAction('Restore all processes', self)
+        restoreAllProcesses.setShortcut('Ctrl+Up')
+        restoreAllProcesses.triggered.connect(self.restore_all_processes)
+        self.processesMenu.addAction(restoreAllProcesses)
 
     def load_profile(self, filename: str):
         logger.info("Loading {}".format(filename))
@@ -155,6 +166,14 @@ class AppWindow(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+    def minimize_all_processes(self):
+        for group in self.centralWidget.group_widgets:
+            group.minimize_all_processes()
+
+    def restore_all_processes(self):
+        for group in self.centralWidget.group_widgets:
+            group.restore_all_processes()
 
 
 def main():
