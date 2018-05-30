@@ -1,10 +1,12 @@
 
 import subprocess
+import os
 
 import shlex
 
-from utils import ProcessStatus, kill_command_windows, get_platform, SupportedPlatforms
+from .utils import ProcessStatus, kill_command_windows, get_platform, SupportedPlatforms
 
+get_window_script = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'get_windowid.sh')
 
 class PopenProcess(object):
     """docstring for PopenProcess"""
@@ -14,7 +16,11 @@ class PopenProcess(object):
         self.args_table_widget = args_table_widget
         self.name = name
         self.directory_widget = directory_widget
+        self.reset()
+
+    def reset(self):
         self.popen = None
+        self._window_id = None
 
     @property
     def status(self) -> ProcessStatus:
@@ -47,6 +53,7 @@ class PopenProcess(object):
     def restart(self):
         if self.popen:
             self.kill()
+        self.reset()
         self.run()
 
     def run(self):
@@ -72,7 +79,13 @@ class LinuxProcess(PopenProcess):
 
     @property
     def window_id(self):
-        command = shlex.split('bash get_windowid.sh {}'.format(self.pid))
+
+        if self._window_id:
+            return self._window_id
+        elif not self.pid:
+            return None
+
+        command = shlex.split('bash {0} {1}'.format(get_window_script, self.pid))
         process = subprocess.Popen(args=command,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
@@ -82,8 +95,8 @@ class LinuxProcess(PopenProcess):
         process.wait()
 
         output = output.decode("utf-8")
-
-        return output.replace("\n", "")
+        self._window_id = output.replace("\n", "")
+        return self._window_id
 
     def minimize(self):
         if not self.window_id:

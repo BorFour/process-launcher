@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import (QGridLayout, QWidget)
 
-import utils
-from utils import AppMode
-from process_group_widget import ProcessGroup, empty_group_data
+from . import utils
+from .utils import AppMode
+from .process_group_widget import ProcessGroup, empty_group_data
 
 class AppWidget(QWidget):
     """docstring for AppWidget"""

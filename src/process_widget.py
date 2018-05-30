@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView,
     QMenu)
 
-from utils import AppMode, browse_existing_directory, parse_dropped_file
-from process import CurrentPlatformProcess
+from .utils import AppMode, browse_existing_directory, parse_dropped_file
+from .process import CurrentPlatformProcess
 
 DEFAULT_DIRECTORY = "~/"
 

@@ -8,8 +8,8 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QAction, QFileDialog, QMessageBox)
 
-from utils import AppMode, get_platform
-from app_widget import AppWidget
+from .utils import AppMode, get_platform
+from .app_widget import AppWidget
 
 logger = logging.getLogger('process_launcher')
 

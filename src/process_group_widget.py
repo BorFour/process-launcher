@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel,
                              QHBoxLayout, QVBoxLayout, QPushButton,
                              QLineEdit, QShortcut)
 
-from process_widget import ProcessWidget
-from utils import AppMode
+from .process_widget import ProcessWidget
+from .utils import AppMode
 
 empty_group_data = {
     "name": "",
