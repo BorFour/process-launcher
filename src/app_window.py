@@ -40,7 +40,6 @@ class AppWindow(QMainWindow):
     def init_menubar(self):
         self.fileMenu = self.menuBar().addMenu("File")
         self.editMenu = self.menuBar().addMenu("Edit")
-        self.groupMenu = self.menuBar().addMenu("Group")
         self.processesMenu = self.menuBar().addMenu("Processes")
         self.viewMenu = self.menuBar().addMenu("View")
 
@@ -71,6 +70,7 @@ class AppWindow(QMainWindow):
 
         self.editMenu.addAction(toggleEditMode)
 
+        self.groupMenu = self.editMenu.addMenu("Group")
         self.newGroup = self.groupMenu.addMenu("New")
         self.groupMenu.addAction(self.clearGroups)
         self.newEmtpyGroup = QAction('Empty group', self)

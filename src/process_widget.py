@@ -51,10 +51,10 @@ class ProcessWidget(QWidget):
         self.close_button = None
         self.browse_folder_button = None
         self.process_id_label = None
-        self.create_variable_widgets(self.app_mode)
+
+        self.change_mode(self.app_mode)
 
         ProcessWidget.n_processes += 1
-        self._init_layout()
 
     def create_variable_widgets(self, mode):
 
@@ -184,7 +184,7 @@ class ProcessWidget(QWidget):
 
     def add_new_arg(self, arg=None, pos=None):
         arg = arg or " "
-        pos = QTableWidget().rowCount() if pos is None else pos
+        pos = self.args_table_widget.rowCount() if pos is None else pos
         self.args_table_widget.insertRow(pos)
         self.args_table_widget.setItem(0, pos, QTableWidgetItem(arg))
 
