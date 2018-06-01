@@ -1,6 +1,10 @@
 # Process launcher
 Create groups with command lines and launch them all together!
 
+## Credits
+
+Using [Font Awesome's](https://fontawesome.com/license) icons!
+
 ## Dependencies
 
 - **PyQt 5**: used to create all the widgets and the window
