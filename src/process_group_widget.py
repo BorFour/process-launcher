@@ -157,12 +157,12 @@ class _ProcessGroupHeader(QWidget):
             old_title.deleteLater()
 
             self.delete_button = QPushButton(self)
-            self.delete_button.setIcon(QIcon('./img/trash.png'))
+            self.delete_button.setIcon(QIcon('img/fontawesome/regular/trash-alt.svg'))
             self.delete_button.setIconSize(QSize(24, 24))
             self.delete_button.clicked.connect(self.parent_widget.delete)
 
             self.add_process_button = QPushButton(self)
-            self.add_process_button.setIcon(QIcon('./img/plus.png'))
+            self.add_process_button.setIcon(QIcon('img/fontawesome/regular/plus-square.svg'))
             self.add_process_button.setIconSize(QSize(24, 24))
             self.add_process_button.clicked.connect(
                 self.parent_widget.add_empty_process)

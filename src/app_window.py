@@ -21,8 +21,8 @@ class AppWindow(QMainWindow):
 
     def __init__(self, profile_filename=None):
         super(AppWindow, self).__init__()
-        self.centralWidget = AppWidget(self)
-        self.setCentralWidget(self.centralWidget)
+        self.appWidget = AppWidget(self)
+        self.setCentralWidget(self.appWidget)
 
         self.init_menubar()
         self.select_profile_file(profile_filename)
@@ -44,19 +44,20 @@ class AppWindow(QMainWindow):
         self.viewMenu = self.menuBar().addMenu("View")
 
         importProcesses = QAction(
-            QIcon('img/arrow_restart.png'), 'Import...', self)
+            QIcon('img/fontawesome/regular/folder-open.svg'), 'Import...', self)
         importProcesses.setShortcut('Ctrl+F')
         importProcesses.setStatusTip('Import processes from a JSON file')
         importProcesses.triggered.connect(self.browse_profile_json)
 
         self.clearGroups = QAction('Clear groups', self)
-        self.clearGroups.triggered.connect(self.centralWidget.clear_groups)
+        self.clearGroups.triggered.connect(self.appWidget.clear_groups)
         self.clearGroups.setEnabled(False)
 
         # saveProfile = QAction(QIcon('img/save.png'), 'Save', self)
         # saveProfile.setShortcut('Ctrl+S')
 
-        saveAsProfile = QAction(QIcon('img/save.png'), 'Save As...', self)
+        saveAsProfile = QAction(
+            QIcon('img/fontawesome/regular/save.svg'), 'Save As...', self)
         saveAsProfile.setShortcut('Ctrl+Shift+S')
         saveAsProfile.triggered.connect(self.profile_save_as)
 
@@ -64,7 +65,7 @@ class AppWindow(QMainWindow):
         self.fileMenu.addAction(saveAsProfile)
 
         toggleEditMode = QAction(
-            QIcon('img/edit.png'), 'Toggle edit mode', self)
+            QIcon('img/fontawesome/regular/edit.svg'), 'Toggle edit mode', self)
         toggleEditMode.setShortcut('Ctrl+E')
         toggleEditMode.triggered.connect(self.toggle_edit)
 
@@ -78,17 +79,19 @@ class AppWindow(QMainWindow):
             'Create a new empty group to the right of the existing ones')
         self.newEmtpyGroup.setShortcut('Ctrl+N')
         self.newEmtpyGroup.triggered.connect(
-            self.centralWidget.add_empty_group_right)
+            self.appWidget.add_empty_group_right)
         self.newEmtpyGroup.setEnabled(False)
 
         self.newGroup.addAction(self.newEmtpyGroup)
 
-        minimizeAllProcesses = QAction('Minimize all processes', self)
+        minimizeAllProcesses = QAction(
+            QIcon('img/fontawesome/regular/window-minimize.svg'), 'Minimize all processes', self)
         minimizeAllProcesses.setShortcut('Ctrl+Down')
         minimizeAllProcesses.triggered.connect(self.minimize_all_processes)
         self.processesMenu.addAction(minimizeAllProcesses)
 
-        restoreAllProcesses = QAction('Restore all processes', self)
+        restoreAllProcesses = QAction(
+            QIcon('img/fontawesome/regular/window-maximize.svg'), 'Restore all processes', self)
         restoreAllProcesses.setShortcut('Ctrl+Up')
         restoreAllProcesses.triggered.connect(self.restore_all_processes)
         self.processesMenu.addAction(restoreAllProcesses)
@@ -97,7 +100,7 @@ class AppWindow(QMainWindow):
         logger.info("Loading {}".format(filename))
         with open(filename, 'r') as json_data:
             d = json.load(json_data)
-            self.centralWidget.create_groups_from_dict(d)
+            self.appWidget.create_groups_from_dict(d)
         self.select_profile_file(filename)
 
     def browse_profile_json(self):
@@ -116,7 +119,7 @@ class AppWindow(QMainWindow):
         if not filename:
             # TODO: pop-up
             return
-        string_json = json.dumps(self.centralWidget.toJSON(), indent=2)
+        string_json = json.dumps(self.appWidget.toJSON(), indent=2)
 
         with open(filename, "w") as text_file:
             text_file.write(string_json)
@@ -145,8 +148,8 @@ class AppWindow(QMainWindow):
         self.clearGroups.setEnabled(True)
 
     def toggle_edit(self):
-        self.centralWidget.toggle_edit()
-        mode = self.centralWidget.app_mode
+        self.appWidget.toggle_edit()
+        mode = self.appWidget.app_mode
         if mode == AppMode.LAUNCH:
             self.change_to_launch()
         elif mode == AppMode.EDIT:
@@ -160,7 +163,7 @@ class AppWindow(QMainWindow):
         close = close.exec()
 
         if close == QMessageBox.Yes:
-            self.centralWidget.end_all()
+            self.appWidget.end_all()
             event.accept()
         elif close == QMessageBox.No:
             event.accept()
@@ -168,11 +171,11 @@ class AppWindow(QMainWindow):
             event.ignore()
 
     def minimize_all_processes(self):
-        for group in self.centralWidget.group_widgets:
+        for group in self.appWidget.group_widgets:
             group.minimize_all_processes()
 
     def restore_all_processes(self):
-        for group in self.centralWidget.group_widgets:
+        for group in self.appWidget.group_widgets:
             group.restore_all_processes()
 
 

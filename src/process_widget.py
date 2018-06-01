@@ -44,7 +44,7 @@ class ProcessWidget(QWidget):
                                                   ProcessWidget.n_processes), parent_widget=self)
 
         self.restart_button = QPushButton(self)
-        self.restart_button.setIcon(QIcon('./img/arrow_restart.png'))
+        self.restart_button.setIcon(QIcon('img/fontawesome/redo.svg'))
         self.restart_button.setIconSize(QSize(24, 24))
         self.restart_button.clicked.connect(self.relaunch_process)
 
@@ -79,12 +79,12 @@ class ProcessWidget(QWidget):
             self.directory_widget.setPlaceholderText("Current workdir")
 
             self.close_button = QPushButton(self)
-            self.close_button.setIcon(QIcon('./img/close.png'))
+            self.close_button.setIcon(QIcon('img/fontawesome/regular/window-close.svg'))
             self.close_button.setIconSize(QSize(24, 24))
             self.close_button.clicked.connect(self.close)
 
             self.browse_folder_button = QPushButton(self)
-            self.browse_folder_button.setIcon(QIcon('./img/folder_browse.png'))
+            self.browse_folder_button.setIcon(QIcon('img/fontawesome/regular/folder-open.svg'))
             self.browse_folder_button.setIconSize(QSize(24, 24))
             self.browse_folder_button.clicked.connect(
                 self.browse_directory_name)
