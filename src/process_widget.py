@@ -41,7 +41,7 @@ class ProcessWidget(QWidget):
         self.directory_widget = QLabel(directory)
         self.process = CurrentPlatformProcess(self.args_table_widget,
                                               name=name or "process {}".format(
-                                                  ProcessWidget.n_processes), directory_widget=self.directory_widget or DEFAULT_DIRECTORY)
+                                                  ProcessWidget.n_processes), parent_widget=self)
 
         self.restart_button = QPushButton(self)
         self.restart_button.setIcon(QIcon('./img/arrow_restart.png'))
@@ -72,7 +72,7 @@ class ProcessWidget(QWidget):
             self.browse_folder_button.deleteLater()
 
         self.process_id_label = QLabel(
-            self.process.pid if self.process.pid else "stopped")
+            str(self.process.pid) if self.process.pid else "stopped")
 
         if mode == AppMode.EDIT:
             self.directory_widget = QLineEdit(directory_name)

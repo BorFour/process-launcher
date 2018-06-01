@@ -11,11 +11,11 @@ get_window_script = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'g
 class PopenProcess(object):
     """docstring for PopenProcess"""
 
-    def __init__(self, args_table_widget, name=None, directory_widget=None):
+    def __init__(self, args_table_widget, name=None, parent_widget=None):
         super(PopenProcess, self).__init__()
         self.args_table_widget = args_table_widget
         self.name = name
-        self.directory_widget = directory_widget
+        self.parent_widget = parent_widget
         self.reset()
 
     def reset(self):
@@ -43,7 +43,7 @@ class PopenProcess(object):
 
     @property
     def directory(self) -> str:
-        return self.directory_widget.text()
+        return self.parent_widget.directory_widget.text()
 
     @property
     def pid(self) -> int:
@@ -72,7 +72,7 @@ class PopenProcess(object):
         """Transform this process into an instance of another class."""
         return cls(args_table_widget=self.args_table_widget,
                    name=self.name,
-                   directory_widget=self.directory_widget)
+                   parent_widget=self.parent_widget)
 
 
 class LinuxProcess(PopenProcess):
