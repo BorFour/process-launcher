@@ -15,6 +15,7 @@ Create groups with command lines and launch them all together!
 
 ### Python dependencies
 ```bash
+sudo pip3 install pipreqs
 pipreqs --force .
 sudo pip3 install -r requirements.txt
 ```
