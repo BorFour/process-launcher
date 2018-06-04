@@ -12,6 +12,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QAction, QFileDialog, QMessageBox)
 
+from .configuration import default_config_path, Configuration
 from .utils import AppMode  # , get_plaftorm
 from .app_widget import AppWidget
 
@@ -27,13 +28,23 @@ class AppWindow(QMainWindow):
     def __init__(self, app, profile_filename=None):
         super(AppWindow, self).__init__()
         self.app = app
+
+        self.conf = Configuration(default_config_path)
+        self.conf.read()
+
         self.appWidget = AppWidget(self)
         self.setCentralWidget(self.appWidget)
 
         self.init_menubar()
-        self.select_profile_file(profile_filename)
+        self.select_profile_file(
+            profile_filename or self.conf.get("last_profile"))
         if self.selected_profile_path:
             self.load_profile(self.selected_profile_path)
+
+        self.show()
+
+        # Restore the state from the config file
+        self.change_theme(self.conf.get("theme"))
 
         # TODO read this from settings
         # self.setWindowFlags(PyQt5.QtCore.Qt.WindowStaysOnTopHint)
@@ -42,6 +53,9 @@ class AppWindow(QMainWindow):
         """Changes the current reference to a profile JSON file."""
         self.selected_profile_path = filename
         self.setWindowTitle(self.selected_profile_path or self.NO_SAVE_FILE)
+
+        if self.selected_profile_path:
+            self.conf.store("last_profile", self.selected_profile_path)
 
     def init_menubar(self):
         self.fileMenu = self.menuBar().addMenu("File")
@@ -208,15 +222,14 @@ class AppWindow(QMainWindow):
             self.app.setStyleSheet(
                 qdarkstyle.load_stylesheet_from_environment())
 
+        self.conf.store("theme", theme_name)
+
 
 def main():
     # print(get_platform())
     app = QApplication(sys.argv)
 
     window = AppWindow(app, sys.argv[1] if len(sys.argv) > 1 else None)
-    window.change_theme("dark")
-    window.change_theme("default")
-    window.show()
     sys.exit(app.exec())
 
 
