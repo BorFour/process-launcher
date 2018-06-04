@@ -4,7 +4,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QLabel, QHBoxLayout, QVBoxLayout,
     QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView,
-    QMenu)
+    QMenu, QAbstractScrollArea)
 
 from .utils import AppMode, browse_existing_directory, parse_dropped_file
 from .process import CurrentPlatformProcess
@@ -100,9 +100,18 @@ class ProcessWidget(QWidget):
         self.args_table_widget = QTableWidget()
         self.args_table_widget.setRowCount(0)
         self.args_table_widget.setColumnCount(1)
+        self.args_table_widget.setSizeAdjustPolicy(
+        QAbstractScrollArea.AdjustToContents)
         for i, arg in enumerate(*args):
             self.args_table_widget.insertRow(i)
             self.args_table_widget.setItem(0, i, QTableWidgetItem(arg))
+
+        self.adjust_table()
+        # self.args_table_widget.resetHorizontalScrollMode()
+
+    def adjust_table(self):
+        self.args_table_widget.resizeColumnsToContents()
+        # self.args_table_widget.resizeRowsToContents()
 
     def _init_layout(self):
         if self.layout():
