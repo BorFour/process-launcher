@@ -3,7 +3,9 @@ Create groups with command lines and launch them all together!
 
 ## Credits
 
-Using [Font Awesome's](https://fontawesome.com/license) icons!
+- Using [Font Awesome's](https://fontawesome.com/license) icons!
+- [Dark theme](https://github.com/ColinDuquesnoy/QDarkStyleSheet)
+- [Dark gray theme](https://github.com/mstuttgart/qdarkgraystyle)
 
 ## Dependencies
 

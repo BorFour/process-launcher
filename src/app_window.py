@@ -1,17 +1,22 @@
 #!/usr/bin/python3
 
 import sys
+import os
 import json
 import logging
+from functools import partial
 
+import qdarkstyle
+import qdarkgraystyle
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QAction, QFileDialog, QMessageBox)
 
-from .utils import AppMode, get_platform
+from .utils import AppMode  # , get_plaftorm
 from .app_widget import AppWidget
 
 logger = logging.getLogger('process_launcher')
+os.environ['QT_API'] = 'pyqt5'
 
 
 class AppWindow(QMainWindow):
@@ -19,8 +24,9 @@ class AppWindow(QMainWindow):
 
     NO_SAVE_FILE = "No file selected"
 
-    def __init__(self, profile_filename=None):
+    def __init__(self, app, profile_filename=None):
         super(AppWindow, self).__init__()
+        self.app = app
         self.appWidget = AppWidget(self)
         self.setCentralWidget(self.appWidget)
 
@@ -95,6 +101,21 @@ class AppWindow(QMainWindow):
         restoreAllProcesses.setShortcut('Ctrl+Up')
         restoreAllProcesses.triggered.connect(self.restore_all_processes)
         self.processesMenu.addAction(restoreAllProcesses)
+
+        self.themeMenu = self.viewMenu.addMenu("Theme")
+
+        defaultTheme = QAction('Default', self)
+        defaultTheme.triggered.connect(
+            partial(self.change_theme, theme_name="default"))
+        self.themeMenu.addAction(defaultTheme)
+        darkGrayTheme = QAction('Dark gray', self)
+        darkGrayTheme.triggered.connect(
+            partial(self.change_theme, theme_name="dark-gray"))
+        self.themeMenu.addAction(darkGrayTheme)
+        darkTheme = QAction('Dark', self)
+        darkTheme.triggered.connect(
+            partial(self.change_theme, theme_name="dark"))
+        self.themeMenu.addAction(darkTheme)
 
     def load_profile(self, filename: str):
         logger.info("Loading {}".format(filename))
@@ -178,11 +199,23 @@ class AppWindow(QMainWindow):
         for group in self.appWidget.group_widgets:
             group.restore_all_processes()
 
+    def change_theme(self, theme_name: str):
+        if theme_name == "default":
+            self.app.setStyleSheet("")
+        elif theme_name == "dark-gray":
+            self.app.setStyleSheet(qdarkgraystyle.load_stylesheet())
+        elif theme_name == "dark":
+            self.app.setStyleSheet(
+                qdarkstyle.load_stylesheet_from_environment())
+
 
 def main():
-    print(get_platform())
+    # print(get_platform())
     app = QApplication(sys.argv)
-    window = AppWindow(sys.argv[1] if len(sys.argv) > 1 else None)
+
+    window = AppWindow(app, sys.argv[1] if len(sys.argv) > 1 else None)
+    window.change_theme("dark")
+    window.change_theme("default")
     window.show()
     sys.exit(app.exec())
 
