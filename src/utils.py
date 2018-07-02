@@ -75,3 +75,6 @@ def parse_dropped_file(text: str) -> str:
         text = text.replace("file:///", "")
 
     return text
+
+
+my_path = os.path.abspath(os.path.dirname(__file__))

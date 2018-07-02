@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QAction, QFileDialog, QMessageBox)
 
 from .configuration import default_config_path, Configuration
-from .utils import AppMode  # , get_plaftorm
+from .utils import AppMode, my_path  # , get_plaftorm
 from .app_widget import AppWidget
 
 logger = logging.getLogger('process_launcher')
@@ -63,8 +63,9 @@ class AppWindow(QMainWindow):
         self.processesMenu = self.menuBar().addMenu("Processes")
         self.viewMenu = self.menuBar().addMenu("View")
 
+        my_path = os.path.abspath(os.path.dirname(__file__))
         importProcesses = QAction(
-            QIcon('img/fontawesome/regular/folder-open.svg'), 'Import...', self)
+            QIcon(os.path.join(my_path, './img/fontawesome/regular/folder-open.svg')), 'Import...', self)
         importProcesses.setShortcut('Ctrl+F')
         importProcesses.setStatusTip('Import processes from a JSON file')
         importProcesses.triggered.connect(self.browse_profile_json)
@@ -73,11 +74,11 @@ class AppWindow(QMainWindow):
         self.clearGroups.triggered.connect(self.appWidget.clear_groups)
         self.clearGroups.setEnabled(False)
 
-        # saveProfile = QAction(QIcon('img/save.png'), 'Save', self)
+        # saveProfile = QAction(QIcon('./imgsave.png'), 'Save', self)
         # saveProfile.setShortcut('Ctrl+S')
 
         saveAsProfile = QAction(
-            QIcon('img/fontawesome/regular/save.svg'), 'Save As...', self)
+            QIcon(os.path.join(my_path, './img/fontawesome/regular/save.svg')), 'Save As...', self)
         saveAsProfile.setShortcut('Ctrl+Shift+S')
         saveAsProfile.triggered.connect(self.profile_save_as)
 
@@ -85,7 +86,7 @@ class AppWindow(QMainWindow):
         self.fileMenu.addAction(saveAsProfile)
 
         toggleEditMode = QAction(
-            QIcon('img/fontawesome/regular/edit.svg'), 'Toggle edit mode', self)
+            QIcon(os.path.join(my_path, './img/fontawesome/regular/edit.svg')), 'Toggle edit mode', self)
         toggleEditMode.setShortcut('Ctrl+E')
         toggleEditMode.triggered.connect(self.toggle_edit)
 
@@ -105,13 +106,13 @@ class AppWindow(QMainWindow):
         self.newGroup.addAction(self.newEmtpyGroup)
 
         minimizeAllProcesses = QAction(
-            QIcon('img/fontawesome/regular/window-minimize.svg'), 'Minimize all processes', self)
+            QIcon(os.path.join(my_path,'./img/fontawesome/regular/window-minimize.svg')), 'Minimize all processes', self)
         minimizeAllProcesses.setShortcut('Ctrl+Down')
         minimizeAllProcesses.triggered.connect(self.minimize_all_processes)
         self.processesMenu.addAction(minimizeAllProcesses)
 
         restoreAllProcesses = QAction(
-            QIcon('img/fontawesome/regular/window-maximize.svg'), 'Restore all processes', self)
+            QIcon(os.path.join(my_path, './img/fontawesome/regular/window-maximize.svg')), 'Restore all processes', self)
         restoreAllProcesses.setShortcut('Ctrl+Up')
         restoreAllProcesses.triggered.connect(self.restore_all_processes)
         self.processesMenu.addAction(restoreAllProcesses)

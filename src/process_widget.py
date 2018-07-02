@@ -1,4 +1,6 @@
 
+import os
+
 from PyQt5.QtCore import QSize, QObjectCleanupHandler
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
@@ -6,7 +8,7 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QLineEdit, QAbstractItemView,
     QMenu)
 
-from .utils import AppMode, browse_existing_directory, parse_dropped_file
+from .utils import AppMode, browse_existing_directory, parse_dropped_file, my_path
 from .process import CurrentPlatformProcess
 
 DEFAULT_DIRECTORY = "~/"
@@ -44,7 +46,7 @@ class ProcessWidget(QWidget):
                                                   ProcessWidget.n_processes), parent_widget=self)
 
         self.restart_button = QPushButton(self)
-        self.restart_button.setIcon(QIcon('img/fontawesome/redo.svg'))
+        self.restart_button.setIcon(QIcon(os.path.join(my_path, './img/fontawesome/redo.svg')))
         self.restart_button.setIconSize(QSize(24, 24))
         self.restart_button.clicked.connect(self.relaunch_process)
 
@@ -79,12 +81,12 @@ class ProcessWidget(QWidget):
             self.directory_widget.setPlaceholderText("Current workdir")
 
             self.close_button = QPushButton(self)
-            self.close_button.setIcon(QIcon('img/fontawesome/regular/window-close.svg'))
+            self.close_button.setIcon(QIcon(os.path.join(my_path, './img/fontawesome/regular/window-close.svg')))
             self.close_button.setIconSize(QSize(24, 24))
             self.close_button.clicked.connect(self.close)
 
             self.browse_folder_button = QPushButton(self)
-            self.browse_folder_button.setIcon(QIcon('img/fontawesome/regular/folder-open.svg'))
+            self.browse_folder_button.setIcon(QIcon(os.path.join(my_path, './img/fontawesome/regular/folder-open.svg')))
             self.browse_folder_button.setIconSize(QSize(24, 24))
             self.browse_folder_button.clicked.connect(
                 self.browse_directory_name)

@@ -1,3 +1,4 @@
+import os
 
 import PyQt5.QtCore
 from PyQt5.QtCore import QSize, QObjectCleanupHandler
@@ -7,7 +8,7 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel,
                              QLineEdit, QShortcut)
 
 from .process_widget import ProcessWidget
-from .utils import AppMode
+from .utils import AppMode, my_path
 
 empty_group_data = {
     "name": "",
@@ -157,12 +158,12 @@ class _ProcessGroupHeader(QWidget):
             old_title.deleteLater()
 
             self.delete_button = QPushButton(self)
-            self.delete_button.setIcon(QIcon('img/fontawesome/regular/trash-alt.svg'))
+            self.delete_button.setIcon(QIcon(os.path.join(my_path, './img/fontawesome/regular/trash-alt.svg')))
             self.delete_button.setIconSize(QSize(24, 24))
             self.delete_button.clicked.connect(self.parent_widget.delete)
 
             self.add_process_button = QPushButton(self)
-            self.add_process_button.setIcon(QIcon('img/fontawesome/regular/plus-square.svg'))
+            self.add_process_button.setIcon(QIcon(os.path.join(my_path, './img/fontawesome/regular/plus-square.svg')))
             self.add_process_button.setIconSize(QSize(24, 24))
             self.add_process_button.clicked.connect(
                 self.parent_widget.add_empty_process)
