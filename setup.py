@@ -11,6 +11,6 @@ setup(name='process_launcher',
           ],
       },
       # data_files=[('.', ['img/*'])],
-      package_data={'process_launcher': ['img/fontawesome/*.svg', 'img/fontawesome/regular/*.svg', 'img/fontawesome/solid/*.svg']},
+      package_data={'process_launcher': ['img/fontawesome/*.svg', 'img/fontawesome/regular/*.svg', 'img/fontawesome/solid/*.svg', 'get_windowid.sh']},
       author='Borja Fourquet'
       )
