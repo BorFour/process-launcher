@@ -12,13 +12,13 @@ os.environ['QT_API'] = 'pyqt5'
 try:
     import qdarkstyle
 except Exception:
-    logger.log("Exception importing qdarkstyle")
+    logger.info("Failed importing qdarkstyle")
     qdarkstyle = None
 
 try:
     import qdarkgraystyle
 except Exception:
-    logger.log("Exception importing qdarkgraystyle")
+    logger.info("Failed importing qdarkgraystyle")
     qdarkgraystyle = None
 
 from PyQt5.QtGui import QIcon
