@@ -6,8 +6,21 @@ import json
 import logging
 from functools import partial
 
-import qdarkstyle
-import qdarkgraystyle
+logger = logging.getLogger('process_launcher')
+os.environ['QT_API'] = 'pyqt5'
+
+try:
+    import qdarkstyle
+except Exception:
+    logger.log("Exception importing qdarkstyle")
+    qdarkstyle = None
+
+try:
+    import qdarkgraystyle
+except Exception:
+    logger.log("Exception importing qdarkgraystyle")
+    qdarkgraystyle = None
+
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QAction, QFileDialog, QMessageBox)
@@ -16,8 +29,7 @@ from .configuration import default_config_path, Configuration
 from .utils import AppMode, my_path  # , get_plaftorm
 from .app_widget import AppWidget
 
-logger = logging.getLogger('process_launcher')
-os.environ['QT_API'] = 'pyqt5'
+
 
 
 class AppWindow(QMainWindow):
@@ -123,14 +135,16 @@ class AppWindow(QMainWindow):
         defaultTheme.triggered.connect(
             partial(self.change_theme, theme_name="default"))
         self.themeMenu.addAction(defaultTheme)
-        darkGrayTheme = QAction('Dark gray', self)
-        darkGrayTheme.triggered.connect(
-            partial(self.change_theme, theme_name="dark-gray"))
-        self.themeMenu.addAction(darkGrayTheme)
-        darkTheme = QAction('Dark', self)
-        darkTheme.triggered.connect(
-            partial(self.change_theme, theme_name="dark"))
-        self.themeMenu.addAction(darkTheme)
+        if qdarkgraystyle:
+            darkGrayTheme = QAction('Dark gray', self)
+            darkGrayTheme.triggered.connect(
+                partial(self.change_theme, theme_name="dark-gray"))
+            self.themeMenu.addAction(darkGrayTheme)
+        if qdarkstyle:
+            darkTheme = QAction('Dark', self)
+            darkTheme.triggered.connect(
+                partial(self.change_theme, theme_name="dark"))
+            self.themeMenu.addAction(darkTheme)
 
     def load_profile(self, filename: str):
         logger.info("Loading {}".format(filename))
