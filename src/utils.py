@@ -1,9 +1,8 @@
-
-
 import sys
 import os
 import subprocess
 from enum import Enum
+from pathlib import Path
 
 from PyQt5.QtWidgets import (QFileDialog)
 
@@ -38,6 +37,11 @@ class SupportedPlatforms(Enum):
 def get_platform():
     return SupportedPlatforms.get_platform(sys.platform)
 
+def get_home_folder():
+    return str(Path.home())
+
+def get_config_folder():
+    return os.path.join(get_home_folder(), '.process_launcher')
 
 def clearLayout(layout):
     """Deletes the widget in a layout."""
@@ -71,3 +75,6 @@ def parse_dropped_file(text: str) -> str:
         text = text.replace("file:///", "")
 
     return text
+
+
+my_path = os.path.abspath(os.path.dirname(__file__))

@@ -1,17 +1,23 @@
 #!/usr/bin/python3
 
 import sys
+import os
 import json
 import logging
+from functools import partial
 
+import qdarkstyle
+import qdarkgraystyle
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QAction, QFileDialog, QMessageBox)
 
-from .utils import AppMode, get_platform
+from .configuration import default_config_path, Configuration
+from .utils import AppMode, my_path  # , get_plaftorm
 from .app_widget import AppWidget
 
 logger = logging.getLogger('process_launcher')
+os.environ['QT_API'] = 'pyqt5'
 
 
 class AppWindow(QMainWindow):
@@ -19,15 +25,26 @@ class AppWindow(QMainWindow):
 
     NO_SAVE_FILE = "No file selected"
 
-    def __init__(self, profile_filename=None):
+    def __init__(self, app, profile_filename=None):
         super(AppWindow, self).__init__()
+        self.app = app
+
+        self.conf = Configuration(default_config_path)
+        self.conf.read()
+
         self.appWidget = AppWidget(self)
         self.setCentralWidget(self.appWidget)
 
         self.init_menubar()
-        self.select_profile_file(profile_filename)
+        self.select_profile_file(
+            profile_filename or self.conf.get("last_profile"))
         if self.selected_profile_path:
             self.load_profile(self.selected_profile_path)
+
+        self.show()
+
+        # Restore the state from the config file
+        self.change_theme(self.conf.get("theme"))
 
         # TODO read this from settings
         # self.setWindowFlags(PyQt5.QtCore.Qt.WindowStaysOnTopHint)
@@ -37,14 +54,18 @@ class AppWindow(QMainWindow):
         self.selected_profile_path = filename
         self.setWindowTitle(self.selected_profile_path or self.NO_SAVE_FILE)
 
+        if self.selected_profile_path:
+            self.conf.store("last_profile", self.selected_profile_path)
+
     def init_menubar(self):
         self.fileMenu = self.menuBar().addMenu("File")
         self.editMenu = self.menuBar().addMenu("Edit")
         self.processesMenu = self.menuBar().addMenu("Processes")
         self.viewMenu = self.menuBar().addMenu("View")
 
+        my_path = os.path.abspath(os.path.dirname(__file__))
         importProcesses = QAction(
-            QIcon('img/fontawesome/regular/folder-open.svg'), 'Import...', self)
+            QIcon(os.path.join(my_path, './img/fontawesome/regular/folder-open.svg')), 'Import...', self)
         importProcesses.setShortcut('Ctrl+F')
         importProcesses.setStatusTip('Import processes from a JSON file')
         importProcesses.triggered.connect(self.browse_profile_json)
@@ -53,11 +74,11 @@ class AppWindow(QMainWindow):
         self.clearGroups.triggered.connect(self.appWidget.clear_groups)
         self.clearGroups.setEnabled(False)
 
-        # saveProfile = QAction(QIcon('img/save.png'), 'Save', self)
+        # saveProfile = QAction(QIcon('./imgsave.png'), 'Save', self)
         # saveProfile.setShortcut('Ctrl+S')
 
         saveAsProfile = QAction(
-            QIcon('img/fontawesome/regular/save.svg'), 'Save As...', self)
+            QIcon(os.path.join(my_path, './img/fontawesome/regular/save.svg')), 'Save As...', self)
         saveAsProfile.setShortcut('Ctrl+Shift+S')
         saveAsProfile.triggered.connect(self.profile_save_as)
 
@@ -65,7 +86,7 @@ class AppWindow(QMainWindow):
         self.fileMenu.addAction(saveAsProfile)
 
         toggleEditMode = QAction(
-            QIcon('img/fontawesome/regular/edit.svg'), 'Toggle edit mode', self)
+            QIcon(os.path.join(my_path, './img/fontawesome/regular/edit.svg')), 'Toggle edit mode', self)
         toggleEditMode.setShortcut('Ctrl+E')
         toggleEditMode.triggered.connect(self.toggle_edit)
 
@@ -85,16 +106,31 @@ class AppWindow(QMainWindow):
         self.newGroup.addAction(self.newEmtpyGroup)
 
         minimizeAllProcesses = QAction(
-            QIcon('img/fontawesome/regular/window-minimize.svg'), 'Minimize all processes', self)
+            QIcon(os.path.join(my_path,'./img/fontawesome/regular/window-minimize.svg')), 'Minimize all processes', self)
         minimizeAllProcesses.setShortcut('Ctrl+Down')
         minimizeAllProcesses.triggered.connect(self.minimize_all_processes)
         self.processesMenu.addAction(minimizeAllProcesses)
 
         restoreAllProcesses = QAction(
-            QIcon('img/fontawesome/regular/window-maximize.svg'), 'Restore all processes', self)
+            QIcon(os.path.join(my_path, './img/fontawesome/regular/window-maximize.svg')), 'Restore all processes', self)
         restoreAllProcesses.setShortcut('Ctrl+Up')
         restoreAllProcesses.triggered.connect(self.restore_all_processes)
         self.processesMenu.addAction(restoreAllProcesses)
+
+        self.themeMenu = self.viewMenu.addMenu("Theme")
+
+        defaultTheme = QAction('Default', self)
+        defaultTheme.triggered.connect(
+            partial(self.change_theme, theme_name="default"))
+        self.themeMenu.addAction(defaultTheme)
+        darkGrayTheme = QAction('Dark gray', self)
+        darkGrayTheme.triggered.connect(
+            partial(self.change_theme, theme_name="dark-gray"))
+        self.themeMenu.addAction(darkGrayTheme)
+        darkTheme = QAction('Dark', self)
+        darkTheme.triggered.connect(
+            partial(self.change_theme, theme_name="dark"))
+        self.themeMenu.addAction(darkTheme)
 
     def load_profile(self, filename: str):
         logger.info("Loading {}".format(filename))
@@ -178,12 +214,23 @@ class AppWindow(QMainWindow):
         for group in self.appWidget.group_widgets:
             group.restore_all_processes()
 
+    def change_theme(self, theme_name: str):
+        if theme_name == "default":
+            self.app.setStyleSheet("")
+        elif theme_name == "dark-gray":
+            self.app.setStyleSheet(qdarkgraystyle.load_stylesheet())
+        elif theme_name == "dark":
+            self.app.setStyleSheet(
+                qdarkstyle.load_stylesheet_from_environment())
+
+        self.conf.store("theme", theme_name)
+
 
 def main():
-    print(get_platform())
+    # print(get_platform())
     app = QApplication(sys.argv)
-    window = AppWindow(sys.argv[1] if len(sys.argv) > 1 else None)
-    window.show()
+
+    window = AppWindow(app, sys.argv[1] if len(sys.argv) > 1 else None)
     sys.exit(app.exec())
 
 
